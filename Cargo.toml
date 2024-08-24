@@ -1,0 +1,11 @@
+[package]
+name = "rust-downloader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.12.7", features = ["blocking", "json"] }
+indicatif = "0.17"
+dirs = "5.0.1"
+url = "2.5.2"
+tokio = { version = "1", features = ["full"] }
