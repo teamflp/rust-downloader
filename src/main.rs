@@ -1,58 +1,95 @@
-mod downloader; // Déclare le module downloader
-mod commands;
-mod installers;
-mod user_input;
-mod progress;
+use crate::commands::check_command;
+use colored::*;
+use installers::ensure_dependencies;
+use std::io::{self, Write};
 
-use std::io;
+mod commands;
+mod downloader;
+mod installers;
+mod progress;
+mod user_input;
 
 fn main() {
-    // Vérifier si ffmpeg est installé
-    if !commands::check_command("ffmpeg") {
-        installers::install_ffmpeg();
+    // 🛠️ Vérification de la présence de yt-dlp et ffmpeg
+    ensure_dependencies();
+
+    // 💡 Vérification de la présence de "curl" (à adapter si besoin)
+    if check_command("curl") {
+        println!("{}", "La commande 'curl' est disponible !".green());
     } else {
-        println!("ffmpeg est déjà installé.");
+        println!("{}", "La commande 'curl' n'est pas trouvée !".red());
+        // std::process::exit(1);
     }
 
-    // Vérifier si yt-dlp est installé
-    if !commands::check_command("yt-dlp") {
-        installers::install_yt_dlp();
-    } else {
-        println!("yt-dlp est déjà installé.");
-    }
 
     loop {
-        // Demander à l'utilisateur l'URL de la vidéo à télécharger
-        println!("Entrez l'URL de la vidéo à télécharger :");
-        let mut url = String::new();
-        io::stdin().read_line(&mut url).expect("Erreur de lecture de l'URL");
-        let url = url.trim();
+        afficher_interface();
 
-        // Demander à l'utilisateur de choisir le format de téléchargement
-        println!("Choisissez le format de téléchargement (vidéo/audio) :");
-        let mut format_choice = String::new();
-        io::stdin().read_line(&mut format_choice).expect("Erreur de lecture du choix de format");
-        let format_choice = format_choice.trim().to_lowercase();
+        print!("{}", "👉 Votre choix : ".bold());
+        io::stdout().flush().unwrap();
 
-        match format_choice.as_str() {
-            "vidéo" | "video" => {
+        let mut choix = String::new();
+        io::stdin().read_line(&mut choix).unwrap();
+        let choix = choix.trim();
+
+        if choix.eq_ignore_ascii_case("q") {
+            println!(
+                "{}",
+                "\n👋 Merci d’avoir utilisé Panther Downloader. À bientôt !\n"
+                    .blue()
+                    .bold()
+            );
+            break;
+        }
+
+        match choix {
+            "1" => {
+                let url = demander_url();
                 let (format, keep_files) = user_input::choisir_format_et_options();
-                downloader::download_video(url, &format, keep_files);
-            },
-            "audio" => {
-                let audio_format = user_input::choisir_audio_format();
-                downloader::download_audio(url, &audio_format);
-            },
+                println!("{}", "\n📥 Téléchargement en cours...\n".cyan().bold());
+                downloader::download_video(&url, &format, keep_files);
+            }
+            "2" => {
+                let url = demander_url();
+                let format = user_input::choisir_audio_format();
+                println!("{}", "\n📥 Téléchargement en cours...\n".cyan().bold());
+                downloader::download_audio(&url, &format);
+            }
             _ => {
-                eprintln!("Format non reconnu. Veuillez choisir 'vidéo' ou 'audio'.");
-                continue; // Demander de nouveau le format si l'entrée est incorrecte
+                println!("{}", "❌ Choix invalide. Veuillez entrer 1 ou 2.".red());
+                continue;
             }
         }
 
-        // Demander à l'utilisateur s'il souhaite continuer
+        // Utilise la fonction centralisée pour demander si on continue
         if !user_input::demander_si_continuer() {
-            println!("Merci d'avoir utilisé le programme de téléchargement !");
-            break; // Quitter la boucle et terminer le programme
+            println!(
+                "{}",
+                "\n👋 Merci d’avoir utilisé Panther Downloader. À bientôt !\n"
+                    .blue()
+                    .bold()
+            );
+            break;
         }
     }
+}
+
+fn afficher_interface() {
+    println!("\n╔══════════════════════════════════════════════════╗");
+    println!("║     🎬 Téléchargement de contenu vidéo et audio   ║");
+    println!("╚══════════════════════════════════════════════════╝\n");
+
+    println!("1. Choisissez le type de téléchargement :");
+    println!("   [1] 🎥 Vidéo");
+    println!("   [2] 🎧 Audio");
+    println!("   [q] ❌ Quitter");
+}
+
+fn demander_url() -> String {
+    print!("{}", "Entrez l'URL YouTube :\n👉 ".bold());
+    io::stdout().flush().unwrap();
+
+    let mut url = String::new();
+    io::stdin().read_line(&mut url).unwrap();
+    url.trim().to_string()
 }

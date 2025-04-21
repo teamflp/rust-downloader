@@ -63,7 +63,7 @@ pub fn download_video(url: &str, format: &str, keep_files: bool) {
                 *path = Some(line["[download] Destination: ".len()..].to_string());
             }
 
-            if let Some((progress, total_size)) = crate::progress::parse_progress(&line) {
+            if let Some((progress, total_size)) = crate::progress::afficher_progression_ligne(&line) {
                 let pb = pb_clone.lock().unwrap();
                 pb.set_length(total_size);
                 pb.set_position(progress);
