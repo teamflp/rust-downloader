@@ -13,3 +13,7 @@ dirs = "6.0.0"
 regex = "1.11.1"
 colored = "3.0.0"
 which = "7.0.3"
+
+[[bin]]
+name = "rust-downloader"
+path = "src/main.rs"
