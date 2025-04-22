@@ -148,7 +148,7 @@ jobs:
         # Vérifier si la construction réussit
         if: success()
 
-      # Pousser l'image vers DockerHub
+      # On pousser l'image vers DockerHub
       - name: Push Docker image to DockerHub
         if: success()
         env:
