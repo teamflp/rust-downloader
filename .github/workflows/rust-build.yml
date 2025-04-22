@@ -1,4 +1,4 @@
-name: rust-downloader CI/CD
+name: Rust Downloader CI/CD
 
 on:
   push:
@@ -12,24 +12,43 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            deb: true
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            zip: true
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            tar: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Nécessaire pour récupérer les tags Git
+          fetch-depth: 0 # Necessary to fetch tags
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: ${{ matrix.target }}
           override: true
 
-      - name: Installer les dépendances système
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -37,15 +56,18 @@ jobs:
             git \
             build-essential \
             clang \
-            lld \
-            musl-dev \
-            pkg-config \
-            gcc-mingw-w64 \
-            mingw-w64 \
-            cabextract \
-            unzip
-          rm -rf /var/lib/apt/lists/*
-          cargo install cargo-deb
+            libssl-dev \
+            zlib1g-dev \
+            llvm \
+            libclang-dev \
+            pkg-config
+          sudo rm -rf /var/lib/apt/lists/*
+
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install curl git llvm
 
       - name: Cache cargo registry
         uses: actions/cache@v3
@@ -59,97 +81,80 @@ jobs:
         uses: actions/cache@v3
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-${{ matrix.os }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-build-
+            ${{ runner.os }}-cargo-build-${{ matrix.os }}-${{ matrix.target }}-
 
-      - name: Ajouter des cibles de compilation croisée
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Run tests
+        run: cargo test --release --target ${{ matrix.target }}
+        # Changed this to use matrix
+
+      - name: Generate .deb package
+        if: matrix.deb
         run: |
-          rustup target add x86_64-unknown-linux-gnu
-          rustup target add x86_64-pc-windows-gnu
-          rustup target add x86_64-apple-darwin || echo "macOS target not available"
+          cargo install cargo-deb
+          cargo deb --no-build --target ${{ matrix.target }}
+          mkdir -p dist
+          mv target/debian/*.deb dist/
 
-      - name: Exécuter les tests
-        run: cargo test --release
-
-      - name: Construire le binaire Linux
-        run: cargo build --release --target x86_64-unknown-linux-gnu
-
-      - name: Construire le binaire Windows
-        run: cargo build --release --target x86_64-pc-windows-gnu
-
-      - name: Construire le binaire macOS
-        run: |
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            cargo build --release --target x86_64-apple-darwin
-          else
-            echo "Skipping macOS build on non-macOS runner"
-          fi
-
-      - name: Générer le package .deb
-        run: |
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            cargo deb --no-build
-          else
-            echo "Skipping .deb packaging on non-Linux runner"
-          fi
-
-      - name: Empaqueter le binaire Windows en .zip
+      - name: Package Windows binary as .zip
+        if: matrix.zip
         run: |
           mkdir -p dist
-          cp target/x86_64-pc-windows-gnu/release/rust-downloader.exe dist/rust-downloader-windows.exe
+          cp target/${{ matrix.target }}/release/rust-downloader.exe dist/rust-downloader-windows.exe
           zip -j dist/rust-downloader-windows.zip dist/rust-downloader-windows.exe
 
-      - name: Empaqueter le binaire macOS en .tar.gz
+      - name: Package macOS binary as .tar.gz
+        if: matrix.tar
         run: |
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            mkdir -p dist
-            cp target/x86_64-apple-darwin/release/rust-downloader dist/rust-downloader-macos
-            tar -czvf dist/rust-downloader-macos.tar.gz dist/rust-downloader-macos
-          else
-            echo "Skipping macOS packaging on non-macOS runner"
-          fi
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/rust-downloader dist/rust-downloader-macos
+          tar -czvf dist/rust-downloader-macos.tar.gz dist/rust-downloader-macos
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-${{ matrix.os }}-${{ matrix.target }}
           path: dist/*
-
-      - name: Construire l'image Docker
-        if: success()
-        run: docker build -t rust-downloader .
-
-      - name: Pousser l'image Docker vers DockerHub
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:$TAG_NAME
-          docker push $DOCKER_USERNAME/rust-downloader:$TAG_NAME
-          docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:latest
-          docker push $DOCKER_USERNAME/rust-downloader:latest
-
-  release:
+  deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Download binaries
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binaries
           path: dist
 
-      - name: Créer une version GitHub
+      - name: Set up Git for GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        run: |
+          mkdir -p public
+          touch public/.nojekyll
+          cp dist/* public/
+          git add public
+          git commit -m "Deploy to GitHub Pages"
+          git push origin --force --orphan-branch gh-pages
+      - name: Publish to crates.io
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
@@ -157,29 +162,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  publish-crate:
-    needs: release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Publier sur crates.io
-        run: cargo publish --no-verify
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
   sign-commit:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Nécessaire pour signer proprement un tag
+          fetch-depth: 0  # nécessaire pour signer proprement un tag
 
       - name: Importer la clé GPG
         run: |
