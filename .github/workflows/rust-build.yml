@@ -136,7 +136,7 @@ jobs:
       #   run: |
       #     echo "MSI packaging logic not yet implemented.  Consider using cargo-wix."
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: dist/*
