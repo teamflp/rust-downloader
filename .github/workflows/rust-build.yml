@@ -104,15 +104,15 @@ jobs:
         if: matrix.zip
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/rust-media-downloader.exe dist/rust-media-downloader-windows.exe
-          zip -j dist/rust-media-downloader-windows.zip dist/rust-media-downloader-windows.exe
+          cp target/${{ matrix.target }}/release/rust-downloader.exe dist/rust-downloader-windows.exe
+          zip -j dist/rust-downloader-windows.zip dist/rust-downloader-windows.exe
 
       - name: Empaqueter le binaire macOS en .tar.gz
         if: matrix.tar
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/rust-media-downloader dist/rust-media-downloader-macos
-          tar -czvf dist/rust-media-downloader-macos.tar.gz dist/rust-media-downloader-macos
+          cp target/${{ matrix.target }}/release/rust-downloader dist/rust-downloader-macos
+          tar -czvf dist/rust-downloader-macos.tar.gz dist/rust-downloader-macos
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -164,7 +164,7 @@ jobs:
 
       - name: Build Docker image
         if: success()
-        run: docker build -t rust-media-downloader .
+        run: docker build -t rust-downloader .
 
       - name: Push Docker image to DockerHub
         if: startsWith(github.ref, 'refs/tags/v')
@@ -174,10 +174,10 @@ jobs:
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
           TAG_NAME=${GITHUB_REF#refs/tags/}
-          docker tag rust-media-downloader $DOCKER_USERNAME/rust-media-downloader:$TAG_NAME
-          docker push $DOCKER_USERNAME/rust-media-downloader:$TAG_NAME
-          docker tag rust-media-downloader $DOCKER_USERNAME/rust-media-downloader:latest
-          docker push $DOCKER_USERNAME/rust-media-downloader:latest
+          docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:$TAG_NAME
+          docker push $DOCKER_USERNAME/rust-downloader:$TAG_NAME
+          docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:latest
+          docker push $DOCKER_USERNAME/rust-downloader:latest
 
   sign-commit:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
