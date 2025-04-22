@@ -1,4 +1,5 @@
 use std::process::{Command, exit};
+use std::env;
 
 /// Vérifie si une commande système est disponible dans le PATH
 fn is_command_available(cmd: &str) -> bool {
@@ -6,7 +7,7 @@ fn is_command_available(cmd: &str) -> bool {
 }
 
 /// Installe Homebrew (macOS) s'il est absent
-fn install_brew() {
+fn install_brew() -> bool {
     println!("⚙️ Homebrew n'est pas installé. Installation en cours...");
 
     let cmd = r#"/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)""#;
@@ -19,19 +20,18 @@ fn install_brew() {
 
     if !status.success() {
         eprintln!("❌ L'installation de Homebrew a échoué.");
-        exit(1);
+        return false;
     }
 
     println!("✅ Homebrew installé avec succès !");
+    true
 }
 
 /// Installe Chocolatey (Windows) s'il est absent
-fn install_chocolatey() {
+fn install_chocolatey() -> bool {
     println!("⚙️ Chocolatey n'est pas installé. Installation en cours...");
 
-    let cmd = r#"Set-ExecutionPolicy Bypass -Scope Process -Force; `
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"#;
+    let cmd = r#"Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"#;
 
     let status = Command::new("powershell")
         .args(&["-NoProfile", "-InputFormat", "None", "-ExecutionPolicy", "Bypass", "-Command", cmd])
@@ -40,97 +40,151 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocola
 
     if !status.success() {
         eprintln!("❌ L'installation de Chocolatey a échoué.");
-        exit(1);
+        return false;
     }
 
     println!("✅ Chocolatey installé avec succès !");
+    true
 }
 
-/// Installe ffmpeg
+/// Tentative d'installation via apt (Linux)
+fn install_apt(package: &str) -> bool {
+    let sudo = if is_command_available("sudo") { "sudo" } else { "" };
+    let update_status = Command::new(sudo)
+        .args(&["apt", "update"])
+        .status()
+        .expect("Erreur lors de la mise à jour des dépôts apt.");
+
+    if !update_status.success() {
+        eprintln!("❌ Échec de la mise à jour des dépôts apt.");
+        return false;
+    }
+    let status = Command::new(sudo)
+        .args(&["apt", "install", "-y", package])
+        .status()
+        .expect(&format!("Erreur lors de l'installation de {} avec apt.", package));
+
+    if !status.success() {
+        eprintln!("❌ L'installation de {} a échoué.", package);
+        return false;
+    }
+    println!("✅ {} installé avec succès via apt!", package);
+    true
+}
+
+/// Tentative d'installation via brew (macOS)
+fn install_brew_package(package: &str) -> bool {
+    if !is_command_available("brew") {
+        if !install_brew() {
+            return false;
+        }
+    }
+    let status = Command::new("brew")
+        .args(&["install", package])
+        .status()
+        .expect(&format!("Erreur lors de l'installation de {} avec brew.", package));
+    if !status.success() {
+        eprintln!("❌ L'installation de {} a échoué.", package);
+        return false;
+    }
+    println!("✅ {} installé avec succès via brew!", package);
+    true
+}
+
+/// Tentative d'installation via choco (Windows)
+fn install_choco_package(package: &str) -> bool {
+    if !is_command_available("choco") {
+        if !install_chocolatey() {
+            return false;
+        }
+    }
+    let status = Command::new("choco")
+        .args(&["install", package, "-y"])
+        .status()
+        .expect(&format!("Erreur lors de l'installation de {} avec choco.", package));
+    if !status.success() {
+        eprintln!("❌ L'installation de {} a échoué.", package);
+        return false;
+    }
+    println!("✅ {} installé avec succès via choco!", package);
+    true
+}
+
+/// Tentative d'installation via scoop (Windows)
+fn install_scoop_package(package: &str) -> bool {
+    if !is_command_available("scoop") {
+        println!("⚙️ Scoop n'est pas installé. Installation en cours...");
+        let cmd = r#"powershell -NoProfile -ExecutionPolicy Bypass -Command "(New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh') | iex""#;
+        let status = Command::new("powershell")
+            .args(&["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd])
+            .status()
+            .expect("Erreur lors de l'installation de Scoop.");
+
+        if !status.success() {
+            eprintln!("❌ L'installation de Scoop a échoué.");
+            return false;
+        }
+        println!("✅ Scoop installé avec succès!");
+    }
+    let status = Command::new("scoop")
+        .args(&["install", package])
+        .status()
+        .expect(&format!("Erreur lors de l'installation de {} avec scoop.", package));
+    if !status.success() {
+        eprintln!("❌ L'installation de {} a échoué.", package);
+        return false;
+    }
+    println!("✅ {} installé avec succès via scoop!", package);
+    true
+}
+
+/// Installe ffmpeg de manière multiplateforme
 pub fn install_ffmpeg() {
     println!("⚙️ Installation de ffmpeg...");
-
-    let mut command = if cfg!(target_os = "macos") {
-        if !is_command_available("brew") {
-            install_brew();
+    let os = env::consts::OS;
+    let success = match os {
+        "linux" => install_apt("ffmpeg"),
+        "macos" => install_brew_package("ffmpeg"),
+        "windows" => install_choco_package("ffmpeg") || install_scoop_package("ffmpeg"),
+        _ => {
+            eprintln!("❌ Système non supporté pour installer ffmpeg.");
+            false
         }
-        Command::new("brew")
-    } else if cfg!(target_os = "linux") {
-        let sudo = if is_command_available("sudo") { "sudo " } else { "" };
-        let _install_cmd = format!("{sudo}apt update && {sudo}apt install -y ffmpeg");
-        Command::new("sh")
-    } else if cfg!(target_os = "windows") {
-        if !is_command_available("choco") {
-            install_chocolatey();
-        }
-        Command::new("choco")
-    } else {
-        eprintln!("❌ Système non supporté pour installer ffmpeg.");
-        exit(1);
     };
 
-    let status = if cfg!(target_os = "macos") {
-        command.arg("install").arg("ffmpeg").status()
-    } else if cfg!(target_os = "linux") {
-        command.arg("-c").arg(format!("{sudo}apt update && {sudo}apt install -y ffmpeg", sudo = if is_command_available("sudo") { "sudo " } else { "" })).status()
-    } else if cfg!(target_os = "windows") {
-        command.arg("install").arg("ffmpeg").arg("-y").status()
-    } else {
-        unreachable!(); // Déjà géré par le bloc else précédent avec exit(1)
-    }
-        .expect("Erreur lors de l'installation de ffmpeg.");
-
-    if status.success() {
-        println!("✅ ffmpeg installé avec succès !");
-    } else {
-        eprintln!("❌ L'installation de ffmpeg a échoué.");
+    if !success {
+        eprintln!("❌ L'installation de ffmpeg a échoué sur ce système.");
         exit(1);
     }
 }
 
-/// Installe yt-dlp
+/// Installe yt-dlp de manière multiplateforme
 pub fn install_yt_dlp() {
     println!("⚙️ Installation de yt-dlp...");
-
-    let mut command = if cfg!(target_os = "macos") {
-        if !is_command_available("brew") {
-            install_brew();
+    let os = env::consts::OS;
+    let success = match os {
+        "linux" => {
+            let sudo = if is_command_available("sudo") { "sudo " } else { "" };
+            let cmd = format!(
+                "{sudo}curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && {sudo}chmod a+rx /usr/local/bin/yt-dlp"
+            );
+            let status = Command::new("sh")
+                .arg("-c")
+                .arg(cmd)
+                .status()
+                .expect("Erreur lors de l'installation de yt-dlp.");
+            status.success()
+        },
+        "macos" => install_brew_package("yt-dlp"),
+        "windows" => install_choco_package("yt-dlp") || install_scoop_package("yt-dlp"),
+        _ => {
+            eprintln!("❌ Système non supporté pour installer yt-dlp.");
+            false
         }
-        Command::new("brew")
-    } else if cfg!(target_os = "linux") {
-        let sudo = if is_command_available("sudo") { "sudo " } else { "" };
-        let _cmd = format!(
-            "{sudo}curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && {sudo}chmod a+rx /usr/local/bin/yt-dlp"
-        );
-        Command::new("sh")
-    } else if cfg!(target_os = "windows") {
-        if !is_command_available("choco") {
-            install_chocolatey();
-        }
-        Command::new("choco")
-    } else {
-        eprintln!("❌ Système non supporté pour installer yt-dlp.");
-        exit(1);
     };
 
-    let status = if cfg!(target_os = "macos") {
-        command.arg("install").arg("yt-dlp").status()
-    } else if cfg!(target_os = "linux") {
-        command.arg("-c").arg(format!(
-            "{sudo}curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && {sudo}chmod a+rx /usr/local/bin/yt-dlp",
-            sudo = if is_command_available("sudo") { "sudo " } else { "" }
-        )).status()
-    } else if cfg!(target_os = "windows") {
-        command.arg("install").arg("yt-dlp").arg("-y").status()
-    } else {
-        unreachable!(); // Déjà géré par le bloc else précédent avec exit(1)
-    }
-        .expect("Erreur lors de l'installation de yt-dlp.");
-
-    if status.success() {
-        println!("✅ yt-dlp installé avec succès !");
-    } else {
-        eprintln!("❌ L'installation de yt-dlp a échoué.");
+    if !success {
+        eprintln!("❌ L'installation de yt-dlp a échoué sur ce système.");
         exit(1);
     }
 }

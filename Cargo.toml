@@ -2,6 +2,10 @@
 name = "rust-downloader"
 version = "0.1.0"
 edition = "2021"
+authors = ["Paterne G.G paterne81@hotmail.fr"]
+description = "Rust Downloader - Multiplateforme"
+repository = "https://github.com/teamflp/rust-downloader.git"
+license = "MIT"
 
 [dependencies]
 indicatif = "0.17"

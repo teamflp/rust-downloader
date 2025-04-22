@@ -1,0 +1,128 @@
+name: 📦 Release Rustdownloader
+
+on:
+  push:
+    branches: [ "master" ]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-test-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 🦀 Installer Rust
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+      # Cache cargo
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+
+      - name: Build and Test
+        run: |
+          cargo build --release
+          cargo test --release
+
+      # 🐳 Build Docker image
+      - name: Build Docker Image
+        run: docker build -t rustdownloader .
+
+      # 🐳 Push Docker image to DockerHub
+      - name: Push Docker Image to DockerHub
+        if: success()
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+          docker tag rustdownloader ${{ secrets.DOCKER_USERNAME }}/rustdownloader:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/rustdownloader:latest
+
+      # 📁 Compiler le binaire et le zipper pour la release
+      - name: Package Binary for Release
+        run: |
+          mkdir -p dist
+          cp target/release/rustdownloader dist/
+          cd dist && tar -czf rustdownloader-linux.tar.gz rustdownloader
+
+      # 🚀 Auto-Release avec auto-versioning basé sur les labels
+      - name: Release Drafter - Publish release
+        uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-drafter.yml
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 📤 Attacher l’artefact compilé à la release GitHub
+      - name: Upload Binary to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/rustdownloader-linux.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add targets for Windows and macOS
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          rustup target add x86_64-apple-darwin
+
+      - name: Build Windows binary
+        run: cargo build --release --target x86_64-pc-windows-gnu
+
+      - name: Build macOS binary
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Package Binaries for Release
+        run: |
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-gnu/release/rustdownloader dist/rustdownloader-linux
+          cp target/x86_64-pc-windows-gnu/release/rustdownloader.exe dist/rustdownloader-windows.exe
+          cp target/x86_64-apple-darwin/release/rustdownloader dist/rustdownloader-macos
+
+          cd dist
+          tar -czf rustdownloader-linux.tar.gz rustdownloader-linux
+          zip rustdownloader-windows.zip rustdownloader-windows.exe
+          tar -czf rustdownloader-macos.tar.gz rustdownloader-macos
+
+      - name: Upload Binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/rustdownloader-linux.tar.gz
+            dist/rustdownloader-windows.zip
+            dist/rustdownloader-macos.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Changelog
+        uses: heinrichreimer/github-changelog-generator-action@v2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

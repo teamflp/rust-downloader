@@ -1,0 +1,164 @@
+name: RustDownloader CI/CD
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Installer Rust stable
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      # Installer les dépendances système
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libssl-dev \
+            build-essential \
+            gcc-multilib \
+            g++-multilib \
+            mingw-w64 \
+            musl-tools \
+            debhelper \
+            wine \
+            zip \
+            cabextract # Pour extraire les archives Microsoft
+            cargo-deb \
+            mingw-w64-tools
+
+      # Explication des dépendances :
+      # pkg-config : Pour aider les crates Rust à trouver les bibliothèques système.
+      # libssl-dev : Pour le support de OpenSSL (par exemple, pour les connexions sécurisées).
+      # build-essential, gcc-multilib, g++-multilib : Outils de compilation C/C++ et support pour architectures 32 bits.
+      # mingw-w64, wine : Pour la compilation croisée et les tests des binaires Windows.
+      # musl-tools : Pour la compilation statique (si nécessaire).
+      # debhelper : Pour la création de paquets Debian (.deb).
+      # zip : Pour créer des archives .zip.
+      # cabextract: Pour extraire des archives Microsoft
+      # cargo-deb : Pour simplifier la création de paquets Debian.
+      # mingw-w64-tools : dépendances supplémentaires pour mingw
+
+      # Cache cargo registry
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      # Cache cargo target
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+
+      # Ajouter les toolchains
+      - name: Add cross targets
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add x86_64-pc-windows-gnu
+          rustup target add x86_64-apple-darwin || echo "macOS target not available" # Gestion plus explicite
+
+      # Tests
+      - name: Run tests
+        run: cargo test --release # Ajouter une étape de test
+
+      # Compiler pour Linux
+      - name: Build Linux binary
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      # Compiler pour Windows
+      - name: Build Windows binary
+        run: cargo build --release --target x86_64-pc-windows-gnu
+
+      # Compiler pour macOS
+      - name: Build macOS binary
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            cargo build --release --target x86_64-apple-darwin
+          else
+            echo "Skipping macOS build on non-macOS runner"
+          fi
+
+      # Générer le paquet .deb
+      - name: Generate .deb package
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            cargo deb --no-build
+          else
+            echo "Skipping .deb packaging on non-Linux runner"
+          fi
+
+      # Créer l'archive .zip pour Windows
+      - name: Package Windows binary as .zip
+        run: |
+          mkdir -p dist
+          cp target/x86_64-pc-windows-gnu/release/rustdownloader.exe dist/rustdownloader-windows.exe
+          zip -j dist/rustdownloader-windows.zip dist/rustdownloader-windows.exe
+          #Correction du chemin
+
+      # Créer l'archive macOS .tar.gz
+      - name: Package macOS binary as .tar.gz
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            mkdir -p dist
+            cp target/x86_64-apple-darwin/release/rustdownloader dist/rustdownloader-macos
+            tar -czvf dist/rustdownloader-macos.tar.gz dist/rustdownloader-macos
+          else
+             echo "Skipping macOS packaging on non-macOS runner"
+          fi
+
+      # (Facultatif) Exporter en .msi (placeholder – outil requis)
+      # - name: Package as .msi (optional)
+      #   run: |
+      #     echo "MSI packaging logic not yet implemented.  Consider using cargo-wix."
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: dist/*
+
+      # Construire l'image Docker
+      - name: Build Docker image
+        run: |
+          docker build -t rustdownloader .
+        # Vérifier si la construction réussit
+        if: success()
+
+      # Pousser l'image vers DockerHub
+      - name: Push Docker image to DockerHub
+        if: success()
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          # Utiliser un tag basé sur la version Git (si possible)
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
+          docker tag rustdownloader ${{ secrets.DOCKER_USERNAME }}/rustdownloader:$VERSION
+          docker push ${{ secrets.DOCKER_USERNAME }}/rustdownloader:$VERSION
+          docker tag rustdownloader ${{ secrets.DOCKER_USERNAME }}/rustdownloader:latest # Conserver également le tag latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/rustdownloader:latest
