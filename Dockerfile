@@ -1,30 +1,44 @@
-FROM rust:1.86-alpine AS builder
+# Étape 1 : Builder
+FROM rust:1.86.0 AS builder
 
-# Installer curl et outils de build
-RUN apk update && apk add --no-cache \
+WORKDIR /usr/src/app
+
+# Installer les dépendances système nécessaires
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
-    build-base \
+    build-essential \
     clang \
     lld \
-    musl-dev \
-    pkgconfig \
-    mingw-w64-gcc \
-    mingw-w64-crt \
-    mingw-w64-headers \
-    mingw-w64-winpthreads \
-    cabextract \
-    unzip
+    libcurl4-openssl-dev \
+    pkg-config \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# Installer Rustup (optionnel si tu veux une version différente de celle de l’image)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Copier uniquement Cargo.toml et Cargo.lock pour installer les dépendances en cache
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {println!(\"Build dependencies...\");}" > src/main.rs
+RUN cargo build --release
+RUN rm -rf src
 
-WORKDIR /workspace
-COPY . /workspace
+# Copier le reste du code
+COPY . .
 
-RUN rustup target add x86_64-unknown-linux-gnu \
-    && rustup target add x86_64-pc-windows-gnu \
-    && rustup target add x86_64-apple-darwin
+# Compiler le binaire final
+RUN cargo build --release
 
-CMD ["cargo", "build", "--release", "--target", "x86_64-unknown-linux-gnu"]
+# Étape 2 : Image finale légère
+FROM debian:bullseye-slim
+
+# Installer les dépendances runtime si besoin (souvent libcurl pour reqwest)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libcurl4 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+# Copier le binaire compilé
+COPY --from=builder /usr/src/app/target/release/rust-downloader /usr/local/bin/rust-downloader
+
+# Définir le point d'entrée
+ENTRYPOINT ["rust-downloader"]

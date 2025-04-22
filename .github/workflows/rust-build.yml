@@ -1,9 +1,11 @@
-name: RustDownloader CI/CD
+name: rust-downloader CI/CD
 
 on:
   push:
     branches:
       - master
+    tags:
+      - 'v*' # Détection des tags de version pour release/crates.io
   pull_request:
     branches:
       - master
@@ -18,46 +20,33 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Nécessaire pour récupérer les tags Git
 
-      # Installer Rust stable
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
-      # Installer les dépendances système
-      - name: Install system dependencies
+      - name: Installer les dépendances système
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            pkg-config \
-            libssl-dev \
+          sudo apt-get install -y --no-install-recommends \
+            curl \
+            git \
             build-essential \
-            gcc-multilib \
-            g++-multilib \
+            clang \
+            lld \
+            musl-dev \
+            pkg-config \
+            gcc-mingw-w64 \
             mingw-w64 \
-            musl-tools \
-            debhelper \
-            wine \
-            zip \
-            cabextract # Pour extraire les archives Microsoft
-            cargo-deb \
-            mingw-w64-tools
+            cabextract \
+            unzip
+          rm -rf /var/lib/apt/lists/*
+          cargo install cargo-deb
 
-      # Explication des dépendances :
-      # pkg-config : Pour aider les crates Rust à trouver les bibliothèques système.
-      # libssl-dev : Pour le support de OpenSSL (par exemple, pour les connexions sécurisées).
-      # build-essential, gcc-multilib, g++-multilib : Outils de compilation C/C++ et support pour architectures 32 bits.
-      # mingw-w64, wine : Pour la compilation croisée et les tests des binaires Windows.
-      # musl-tools : Pour la compilation statique (si nécessaire).
-      # debhelper : Pour la création de paquets Debian (.deb).
-      # zip : Pour créer des archives .zip.
-      # cabextract: Pour extraire des archives Microsoft
-      # cargo-deb : Pour simplifier la création de paquets Debian.
-      # mingw-w64-tools : dépendances supplémentaires pour mingw
-
-      # Cache cargo registry
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -66,7 +55,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
 
-      # Cache cargo target
       - name: Cache cargo build
         uses: actions/cache@v3
         with:
@@ -75,27 +63,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
-      # Ajouter les toolchains
-      - name: Add cross targets
+      - name: Ajouter des cibles de compilation croisée
         run: |
           rustup target add x86_64-unknown-linux-gnu
           rustup target add x86_64-pc-windows-gnu
-          rustup target add x86_64-apple-darwin || echo "macOS target not available" # Gestion plus explicite
+          rustup target add x86_64-apple-darwin || echo "macOS target not available"
 
-      # Tests
-      - name: Run tests
-        run: cargo test --release # Ajouter une étape de test
+      - name: Exécuter les tests
+        run: cargo test --release
 
-      # Compiler pour Linux
-      - name: Build Linux binary
+      - name: Construire le binaire Linux
         run: cargo build --release --target x86_64-unknown-linux-gnu
 
-      # Compiler pour Windows
-      - name: Build Windows binary
+      - name: Construire le binaire Windows
         run: cargo build --release --target x86_64-pc-windows-gnu
 
-      # Compiler pour macOS
-      - name: Build macOS binary
+      - name: Construire le binaire macOS
         run: |
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             cargo build --release --target x86_64-apple-darwin
@@ -103,8 +86,7 @@ jobs:
             echo "Skipping macOS build on non-macOS runner"
           fi
 
-      # Générer le paquet .deb
-      - name: Generate .deb package
+      - name: Générer le package .deb
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             cargo deb --no-build
@@ -112,53 +94,116 @@ jobs:
             echo "Skipping .deb packaging on non-Linux runner"
           fi
 
-      # Créer l'archive .zip pour Windows
-      - name: Package Windows binary as .zip
+      - name: Empaqueter le binaire Windows en .zip
         run: |
           mkdir -p dist
-          cp target/x86_64-pc-windows-gnu/release/rustdownloader.exe dist/rustdownloader-windows.exe
-          zip -j dist/rustdownloader-windows.zip dist/rustdownloader-windows.exe
-          #Correction du chemin
+          cp target/x86_64-pc-windows-gnu/release/rust-downloader.exe dist/rust-downloader-windows.exe
+          zip -j dist/rust-downloader-windows.zip dist/rust-downloader-windows.exe
 
-      # Créer l'archive macOS .tar.gz
-      - name: Package macOS binary as .tar.gz
+      - name: Empaqueter le binaire macOS en .tar.gz
         run: |
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             mkdir -p dist
-            cp target/x86_64-apple-darwin/release/rustdownloader dist/rustdownloader-macos
-            tar -czvf dist/rustdownloader-macos.tar.gz dist/rustdownloader-macos
+            cp target/x86_64-apple-darwin/release/rust-downloader dist/rust-downloader-macos
+            tar -czvf dist/rust-downloader-macos.tar.gz dist/rust-downloader-macos
           else
-             echo "Skipping macOS packaging on non-macOS runner"
+            echo "Skipping macOS packaging on non-macOS runner"
           fi
 
-      # (Facultatif) Exporter en .msi (placeholder – outil requis)
-      # - name: Package as .msi (optional)
-      #   run: |
-      #     echo "MSI packaging logic not yet implemented.  Consider using cargo-wix."
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: dist/*
 
-      # Construire l'image Docker
-      - name: Build Docker image
-        run: |
-          docker build -t rustdownloader .
-        # Vérifier si la construction réussit
+      - name: Construire l'image Docker
         if: success()
+        run: docker build -t rust-downloader .
 
-      # On pousser l'image vers DockerHub
-      - name: Push Docker image to DockerHub
+      - name: Pousser l'image Docker vers DockerHub
         if: success()
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          # Utiliser un tag basé sur la version Git (si possible)
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
           VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
-          docker tag rustdownloader ${{ secrets.DOCKER_USERNAME }}/rustdownloader:$VERSION
-          docker push ${{ secrets.DOCKER_USERNAME }}/rustdownloader:$VERSION
-          docker tag rustdownloader ${{ secrets.DOCKER_USERNAME }}/rustdownloader:latest # Conserver également le tag latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/rustdownloader:latest
+          docker tag rust-downloader ${GITHUB_ACTOR}/rust-downloader:$VERSION
+          docker push ${GITHUB_ACTOR}/rust-downloader:$VERSION
+          docker tag rust-downloader ${GITHUB_ACTOR}/rust-downloader:latest
+          docker push ${GITHUB_ACTOR}/rust-downloader:latest
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: dist
+
+      - name: Créer une version GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-crate:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publier sur crates.io
+        run: cargo publish --no-verify
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  sign-commit:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Nécessaire pour signer proprement un tag
+
+      - name: Importer la clé GPG
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "trust-model always" >> ~/.gnupg/gpg.conf
+          echo -e "5\\ny\\n" |  gpg --command-fd 0 --expert --edit-key $GPG_KEY_ID trust
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+
+      - name: Configurer Git
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global commit.gpgsign true
+          git config --global user.signingkey $GPG_KEY_ID
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+
+      - name: Recreate signed tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          git tag -d "$VERSION" || true
+          git tag -s "$VERSION" -m "Signed release $VERSION" -u "$GPG_KEY_ID"
+          git push --force origin "refs/tags/$VERSION"
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
