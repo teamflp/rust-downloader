@@ -1,4 +1,4 @@
-name: Rust Downloader CI/CD
+name: Rust Media Downloader CI/CD
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Necessary to fetch tags
+          fetch-depth: 0 # Nécessaire pour récupérer les tags
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -47,7 +47,7 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Install system dependencies (Linux)
+      - name: Installer les dépendances système (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
@@ -63,7 +63,7 @@ jobs:
             pkg-config
           sudo rm -rf /var/lib/apt/lists/*
 
-      - name: Install system dependencies (macOS)
+      - name: Installer les dépendances système (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew update
@@ -88,11 +88,11 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Run tests
+      - name: Exécuter les tests
         run: cargo test --release --target ${{ matrix.target }}
         # Changed this to use matrix
 
-      - name: Generate .deb package
+      - name: Générer le package .deb
         if: matrix.deb
         run: |
           cargo install cargo-deb
@@ -100,14 +100,14 @@ jobs:
           mkdir -p dist
           mv target/debian/*.deb dist/
 
-      - name: Package Windows binary as .zip
+      - name: Empaqueter le binaire Windows en .zip
         if: matrix.zip
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/rust-downloader.exe dist/rust-downloader-windows.exe
           zip -j dist/rust-downloader-windows.zip dist/rust-downloader-windows.exe
 
-      - name: Package macOS binary as .tar.gz
+      - name: Empaqueter le binaire macOS en .tar.gz
         if: matrix.tar
         run: |
           mkdir -p dist
