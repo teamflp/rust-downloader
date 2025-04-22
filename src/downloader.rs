@@ -1,10 +1,10 @@
-use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader as StdBufReader};
+use dirs::download_dir;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::sync::{Arc, Mutex};
-use std::thread;
 use std::env;
-use dirs::download_dir; // Importer la fonction pour obtenir le répertoire de téléchargement
+use std::io::{BufRead, BufReader as StdBufReader};
+use std::process::{Command, Stdio};
+use std::sync::{Arc, Mutex};
+use std::thread; 
 
 pub fn download_video(url: &str, format: &str, keep_files: bool) {
     let mut command = Command::new("yt-dlp");
@@ -27,7 +27,9 @@ pub fn download_video(url: &str, format: &str, keep_files: bool) {
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
 
-    let mut child = command.spawn().expect("Erreur lors de l'exécution de yt-dlp");
+    let mut child = command
+        .spawn()
+        .expect("Erreur lors de l'exécution de yt-dlp");
     let stdout = child.stdout.take().expect("Erreur de capture du stdout");
     let stderr = child.stderr.take().expect("Erreur de capture du stderr");
 
@@ -63,7 +65,8 @@ pub fn download_video(url: &str, format: &str, keep_files: bool) {
                 *path = Some(line["[download] Destination: ".len()..].to_string());
             }
 
-            if let Some((progress, total_size)) = crate::progress::afficher_progression_ligne(&line) {
+            if let Some((progress, total_size)) = crate::progress::afficher_progression_ligne(&line)
+            {
                 let pb = pb_clone.lock().unwrap();
                 pb.set_length(total_size);
                 pb.set_position(progress);
@@ -71,7 +74,9 @@ pub fn download_video(url: &str, format: &str, keep_files: bool) {
         }
     }
 
-    let status = child.wait().expect("Erreur lors de l'attente de la fin du processus");
+    let status = child
+        .wait()
+        .expect("Erreur lors de l'attente de la fin du processus");
 
     pb.lock().unwrap().finish();
 
@@ -79,7 +84,9 @@ pub fn download_video(url: &str, format: &str, keep_files: bool) {
         println!("La vidéo a été téléchargée avec succès !");
         if let Some(path) = path.lock().unwrap().as_ref() {
             // Utiliser le répertoire de téléchargement par défaut
-            let download_dir = download_dir().unwrap_or_else(|| env::current_dir().expect("Impossible d'obtenir le répertoire de travail actuel"));
+            let download_dir = download_dir().unwrap_or_else(|| {
+                env::current_dir().expect("Impossible d'obtenir le répertoire de travail actuel")
+            });
             let full_path = download_dir.join(path);
             println!("Chemin du fichier téléchargé : {:?}", full_path);
         }
@@ -97,12 +104,21 @@ pub fn download_audio(url: &str, audio_format: &str) {
         command.args(&["-P", download_path.to_str().unwrap()]);
     }
 
-    command.args(&["-f", "bestaudio", "--extract-audio", "--audio-format", audio_format, url]);
+    command.args(&[
+        "-f",
+        "bestaudio",
+        "--extract-audio",
+        "--audio-format",
+        audio_format,
+        url,
+    ]);
 
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
 
-    let mut child = command.spawn().expect("Erreur lors de l'exécution de yt-dlp");
+    let mut child = command
+        .spawn()
+        .expect("Erreur lors de l'exécution de yt-dlp");
     let stdout = child.stdout.take().expect("Erreur de capture du stdout");
     let stderr = child.stderr.take().expect("Erreur de capture du stderr");
 
@@ -146,7 +162,9 @@ pub fn download_audio(url: &str, audio_format: &str) {
         }
     }
 
-    let status = child.wait().expect("Erreur lors de l'attente de la fin du processus");
+    let status = child
+        .wait()
+        .expect("Erreur lors de l'attente de la fin du processus");
 
     pb.lock().unwrap().finish();
 
@@ -154,12 +172,127 @@ pub fn download_audio(url: &str, audio_format: &str) {
         println!("L'audio a été téléchargée avec succès !");
         if let Some(path) = path.lock().unwrap().as_ref() {
             // Utiliser le répertoire de téléchargement par défaut
-            let download_dir = download_dir().unwrap_or_else(|| env::current_dir().expect("Impossible d'obtenir le répertoire de travail actuel"));
+            let download_dir = download_dir().unwrap_or_else(|| {
+                env::current_dir().expect("Impossible d'obtenir le répertoire de travail actuel")
+            });
             let full_path = download_dir.join(path);
             println!("Chemin du fichier téléchargé : {:?}", full_path);
         }
     } else {
         eprintln!("Erreur lors du téléchargement de l'audio.");
         std::process::exit(1);
+    }
+}
+
+// TESTS 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::OsStr;
+    use std::path::PathBuf;
+
+    // Helper function to construct the yt-dlp command for videos
+    fn build_yt_dlp_command_video(
+        url: &str,
+        format: &str,
+        keep_files: bool,
+        download_path: Option<PathBuf>,
+    ) -> Command {
+        let mut command = Command::new("yt-dlp");
+
+        if let Some(path) = download_path {
+            command.args(&["-P", path.to_str().unwrap()]);
+        }
+
+        command.arg(url);
+
+        if keep_files {
+            command.arg("-k");
+        }
+
+        if !format.is_empty() {
+            command.args(&["-f", format]);
+        }
+
+        command
+    }
+
+    // Helper function to construct the yt-dlp command for audio
+    fn build_yt_dlp_command_audio(
+        url: &str,
+        audio_format: &str,
+        download_path: Option<PathBuf>,
+    ) -> Command {
+        let mut command = Command::new("yt-dlp");
+
+        if let Some(path) = download_path {
+            command.args(&["-P", path.to_str().unwrap()]);
+        }
+
+        command.args(&[
+            "-f",
+            "bestaudio",
+            "--extract-audio",
+            "--audio-format",
+            audio_format,
+            url,
+        ]);
+
+        command
+    }
+
+    #[test]
+    fn test_build_yt_dlp_command_video_with_all_options() {
+        let url = "https://test.url/video";
+        let format = "mp4";
+        let keep_files = true;
+        let download_path = Some(PathBuf::from("/tmp/downloads"));
+        let command = build_yt_dlp_command_video(url, format, keep_files, download_path.clone());
+
+        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let expected_path = download_path.unwrap().to_str().unwrap().to_string();
+
+        assert!(args.contains(&"-P".to_string()));
+        assert!(args.contains(&expected_path));
+        assert!(args.contains(&url.to_string()));
+        assert!(args.contains(&"-k".to_string()));
+        assert!(args.contains(&"-f".to_string()));
+        assert!(args.contains(&format.to_string()));
+    }
+
+    #[test]
+    fn test_build_yt_dlp_command_video_minimal() {
+        let url = "https://test.url/simple";
+        let format = "";
+        let keep_files = false;
+        let download_path = None;
+        let command = build_yt_dlp_command_video(url, format, keep_files, download_path);
+
+        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+
+        assert!(!args.contains(&"-P".to_string()));
+        assert!(args.contains(&url.to_string()));
+        assert!(!args.contains(&"-k".to_string()));
+        assert!(!args.contains(&"-f".to_string()));
+    }
+
+    #[test]
+    fn test_build_yt_dlp_command_audio() {
+        let url = "https://audio.test";
+        let audio_format = "mp3";
+        let download_path = Some(PathBuf::from("/home/user/dl"));
+        let command = build_yt_dlp_command_audio(url, audio_format, download_path.clone());
+
+        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let expected_path = download_path.unwrap().to_str().unwrap().to_string();
+
+        assert!(args.contains(&"-P".to_string()));
+        assert!(args.contains(&expected_path));
+        assert!(args.contains(&"-f".to_string()));
+        assert!(args.contains(&"bestaudio".to_string()));
+        assert!(args.contains(&"--extract-audio".to_string()));
+        assert!(args.contains(&"--audio-format".to_string()));
+        assert!(args.contains(&audio_format.to_string()));
+        assert!(args.contains(&url.to_string()));
     }
 }
