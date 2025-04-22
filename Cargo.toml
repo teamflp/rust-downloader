@@ -1,5 +1,5 @@
 [package]
-name = "rust-downloader"
+name = "rust Media downloader"
 version = "0.1.0"
 edition = "2021"
 authors = ["Paterne G.G paterne81@hotmail.fr"]
