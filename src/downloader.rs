@@ -188,7 +188,6 @@ pub fn download_audio(url: &str, audio_format: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::ffi::OsStr;
     use std::path::PathBuf;
 
     // Helper function to construct the yt-dlp command for videos
