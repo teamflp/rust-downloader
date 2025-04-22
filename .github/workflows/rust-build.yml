@@ -121,17 +121,17 @@ jobs:
         run: docker build -t rust-downloader .
 
       - name: Pousser l'image Docker vers DockerHub
-        if: success()
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
-          docker tag rust-downloader ${GITHUB_ACTOR}/rust-downloader:$VERSION
-          docker push ${GITHUB_ACTOR}/rust-downloader:$VERSION
-          docker tag rust-downloader ${GITHUB_ACTOR}/rust-downloader:latest
-          docker push ${GITHUB_ACTOR}/rust-downloader:latest
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:$TAG_NAME
+          docker push $DOCKER_USERNAME/rust-downloader:$TAG_NAME
+          docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:latest
+          docker push $DOCKER_USERNAME/rust-downloader:latest
 
   release:
     needs: build
