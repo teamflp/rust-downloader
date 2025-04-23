@@ -1,5 +1,5 @@
 [package]
-name = "rust-downloader"
+name = "rustdownloader"
 version = "0.1.0"
 edition = "2021"
 authors = ["Paterne G.G paterne81@hotmail.fr"]
@@ -15,5 +15,5 @@ colored = "3.0.0"
 which = "7.0.3"
 
 [[bin]]
-name = "rust-downloader"
+name = "rustdownloader"
 path = "src/main.rs"

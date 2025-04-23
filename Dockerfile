@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 # Copier le binaire compilé
-COPY --from=builder /usr/src/app/target/release/rust-downloader /usr/local/bin/rust-downloader
+COPY --from=builder /usr/src/app/target/release/rustdownloader /usr/local/bin/rustdownloader
 
 # Définir le point d'entrée
 ENTRYPOINT ["rust-downloader"]
