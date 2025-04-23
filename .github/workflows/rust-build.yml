@@ -81,6 +81,14 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Generate documentation
+        run: cargo doc --no-deps --release
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: target/doc
+
       - name: Run tests
         run: cargo test --release --target ${{ matrix.target }}
 
@@ -173,7 +181,6 @@ jobs:
           docker push $DOCKER_USERNAME/rust-downloader:$TAG_NAME
           docker tag rust-downloader $DOCKER_USERNAME/rust-downloader:latest
           docker push $DOCKER_USERNAME/rust-downloader:latest
-
 
   sign-commit:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
