@@ -1,9 +1,9 @@
 # Étape 1 : Builder
-FROM rust:1.86.0 AS builder
+FROM rust:1.86 AS builder
 
 WORKDIR /usr/src/app
 
-# Installer les dépendances système nécessaires
+# Installer les dépendances système nécessaires à la compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
@@ -15,30 +15,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Copier uniquement Cargo.toml et Cargo.lock pour installer les dépendances en cache
+# Copier les fichiers Cargo pour mise en cache des dépendances
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {println!(\"Build dependencies...\");}" > src/main.rs
 RUN cargo build --release
 RUN rm -rf src
 
-# Copier le reste du code
+# Copier le code source complet
 COPY . .
 
 # Compiler le binaire final
 RUN cargo build --release
 
-# Étape 2 : Image finale légère
+# Étape 2 : Image minimale pour exécution
 FROM debian:bullseye-slim
 
-# Installer les dépendances runtime si besoin (souvent libcurl pour reqwest)
+# Installer les dépendances nécessaires à l'exécution
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libcurl4 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Copier le binaire compilé
-COPY --from=builder /usr/src/app/target/release/rustdownloader /usr/local/bin/rustdownloader
+# Copier le binaire depuis le builder
+COPY --from=builder /usr/src/app/target/release/rust-media-downloader /usr/local/bin/rust-media-downloader
 
-# Définir le point d'entrée
-ENTRYPOINT ["rust-downloader"]
+# Exposer le point d’entrée
+ENTRYPOINT ["rust-media-downloader"]

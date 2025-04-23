@@ -1,11 +1,18 @@
 [package]
-name = "rustdownloader"
+name = "rust-media-downloader"
 version = "0.1.0"
 edition = "2021"
-authors = ["Paterne G.G paterne81@hotmail.fr"]
-description = "Rust Downloader - Multiplateforme"
-repository = "https://github.com/teamflp/rust-downloader.git"
+authors = ["Paterne G. G <paterne81@hotmail.fr>"]
+description = "Rust Downloader - Téléchargeur de médias multiplateforme"
+keywords = ["download", "cli", "media", "video", "tool"]
+categories = ["command-line-utilities", "network-programming"]
 license = "MIT"
+repository = "https://github.com/teamflp/rust-downloader"
+readme = "README.md"
+
+[[bin]]
+name = "rust-media-downloader"
+path = "src/main.rs"
 
 [dependencies]
 indicatif = "0.17"
@@ -13,7 +20,3 @@ dirs = "6.0.0"
 regex = "1.11.1"
 colored = "3.0.0"
 which = "7.0.3"
-
-[[bin]]
-name = "rustdownloader"
-path = "src/main.rs"
