@@ -80,20 +80,20 @@ jobs:
       - name: Run tests
         run: cargo test --verbose --target ${{ matrix.target }}
 
-      - name: Package
+      - name: Package binary
         run: |
-          mkdir output
-          cp target/${{ matrix.target }}/release/* output/ || true
-          cd output
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then tar -czf artifact.tar.gz *; fi
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then tar -czf artifact.tar.gz *; fi
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then 7z a artifact.zip *; fi
+          mkdir -p dist/${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/* dist/${{ matrix.target }}/ || true
+          cd dist/${{ matrix.target }}
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then tar -czf rust-media-downloader-linux.tar.gz *; fi
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then tar -czf rust-media-downloader-macos.tar.gz *; fi
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then zip rust-media-downloader-windows.zip *; fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-build
-          path: output/*
+          name: rust-media-downloader-${{ matrix.os }}
+          path: dist/${{ matrix.target }}/*
 
   deploy:
     needs: build
@@ -134,8 +134,9 @@ jobs:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           files: |
-            */artifact.zip
-            */artifact.tar.gz
+            */rust-media-downloader-windows.zip
+            */rust-media-downloader-linux.tar.gz
+            */rust-media-downloader-macos.tar.gz
 
       - name: Docker build & push
         if: startsWith(github.ref, 'refs/tags/v')
