@@ -36,26 +36,19 @@ jobs:
           override: true
           target: ${{ matrix.target }}
 
-      - name: Install Dependencies (Linux only)
+      - name: Install Dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config ffmpeg
 
-      - name: Install Dependencies (macOS only)
+      - name: Install Dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: brew install ffmpeg
 
-      - name: Install MinGW (Windows only)
+      - name: Install MinGW (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           choco install -y mingw
           echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
-
-      - name: Install MinGW toolchain (Windows only)
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install mingw -y
-          echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
-      
 
       - name: Cache cargo registry
         uses: actions/cache@v3
