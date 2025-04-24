@@ -190,13 +190,22 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_windows_only() {
+        // Test spécifique à Windows
+        assert!(true);
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_not_windows() {
+        // Test qui s'exécute sur les autres OS
+        assert!(true);
+    }
+
     // Helper function to construct the yt-dlp command for videos
-    fn build_yt_dlp_command_video(
-        url: &str,
-        format: &str,
-        keep_files: bool,
-        download_path: Option<PathBuf>,
-    ) -> Command {
+    fn build_yt_dlp_command_video(url: &str, format: &str, keep_files: bool, download_path: Option<PathBuf>, ) -> Command {
         let mut command = Command::new("yt-dlp");
 
         if let Some(path) = download_path {
@@ -217,11 +226,7 @@ mod tests {
     }
 
     // Helper function to construct the yt-dlp command for audio
-    fn build_yt_dlp_command_audio(
-        url: &str,
-        audio_format: &str,
-        download_path: Option<PathBuf>,
-    ) -> Command {
+    fn build_yt_dlp_command_audio(url: &str, audio_format: &str, download_path: Option<PathBuf>, ) -> Command {
         let mut command = Command::new("yt-dlp");
 
         if let Some(path) = download_path {
@@ -239,7 +244,6 @@ mod tests {
 
         command
     }
-
     #[test]
     fn test_build_yt_dlp_command_video_with_all_options() {
         let url = "https://test.url/video";
