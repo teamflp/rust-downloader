@@ -1,4 +1,3 @@
-
 # Rust Media Downloader
 
 ![Latest Release](https://img.shields.io/github/v/release/teamflp/rust-downloader?style=for-the-badge)
@@ -14,7 +13,17 @@
 
 ## 🚀 Téléchargement rapide
 
-👉 Téléchargez la dernière version compilée depuis la section [Releases](https://github.com/teamflp/rust-downloader/releases) :
+👉 Téléchargez la dernière version compilée selon votre système :
+
+| Plateforme | Fichier binaire prêt à l’emploi | Lien                                                                          |
+|------------|---------------------------------|-------------------------------------------------------------------------------|
+| 🐧 Linux   | `rust-downloader`               | [Releases GitHub](https://github.com/teamflp/rust-downloader/releases/latest) |
+| 🍎 macOS   | `rust-downloader`               | [Releases GitHub](https://github.com/teamflp/rust-downloader/releases/latest) |
+| 🪟 Windows | `rust-downloader.exe`           | [Télécharger le binaire](https://tonlienperso.com/rust-downloader.exe)        |
+
+> ⚠️ Le fichier `.exe` Windows est compilé localement et mis à disposition en téléchargement direct. Aucun outil de compilation requis : **double-cliquez ou utilisez-le via la console**.
+
+---
 
 - Windows : `rust-downloader.exe`
 - macOS / Linux : `rust-downloader`
@@ -26,14 +35,9 @@ Si vous souhaitez compiler manuellement :
 ```bash
 git clone https://github.com/teamflp/rust-downloader.git
 cd rust-downloader
-cargo run -- https://exemple.com/video
+cargo run 
 ```
-
-CopierModifierTests :
-
-```bash
-cargo test
-```
+Suivez les instructions…
 
 ## 📚 Documentation
 

@@ -34,7 +34,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      # Windows-specific: setup MinGW and configure linker
+      # Spécifique Windows : setup MinGW et config linker
       - name: Setup MinGW (Windows)
         if: matrix.os == 'windows-latest'
         uses: egor-tensin/setup-mingw@v2
@@ -78,18 +78,8 @@ jobs:
         with:
           path: target/${{ matrix.target }}/doc
 
-      # Run tests with the correct target
-      - name: Run tests (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: cargo test --target ${{ matrix.target }}
-
-      - name: Run tests (macOS)
-        if: matrix.os == 'macos-latest'
-        run: cargo test --target ${{ matrix.target }}
-
-      - name: Run tests (Windows)
-        if: matrix.os == 'windows-latest'
-        run: cargo test --target ${{ matrix.target }}
+      - name: Run tests
+        run: cargo test --verbose --target ${{ matrix.target }}
 
       - name: Package binary
         run: |
