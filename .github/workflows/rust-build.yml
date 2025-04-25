@@ -34,7 +34,6 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      # Spécifique Windows : setup MinGW et config linker
       - name: Setup MinGW (Windows)
         if: matrix.os == 'windows-latest'
         uses: egor-tensin/setup-mingw@v2
@@ -45,10 +44,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           mkdir -p ~/.cargo
-          echo "[target.x86_64-pc-windows-gnu]" >> ~/.cargo/config.toml
-          echo 'linker = "gcc"' >> ~/.cargo/config.toml
-          echo 'ar = "ar"' >> ~/.cargo/config.toml
-          echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> ~/.cargo/config.toml
+          cat <<EOF >> ~/.cargo/config.toml
+          [target.x86_64-pc-windows-gnu]
+          linker = "gcc"
+          ar = "ar"
+          rustflags = ["-Ctarget-feature=+crt-static"]
+          EOF
 
       - name: Install Dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -73,7 +74,7 @@ jobs:
       - name: Generate documentation
         run: cargo doc --no-deps --target ${{ matrix.target }}
 
-      - name: Upload documentation
+      - name: Upload documentation artifact
         uses: actions/upload-pages-artifact@v2
         with:
           path: target/${{ matrix.target }}/doc
@@ -92,7 +93,7 @@ jobs:
             "windows-latest") 7z a rust-media-downloader-windows.zip * ;;
           esac
 
-      - name: Upload artifact
+      - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: rust-media-downloader-${{ matrix.os }}
@@ -106,7 +107,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download artifacts
+      - name: Download all build artifacts
         uses: actions/download-artifact@v4
 
       - name: Setup Git for GitHub Pages
@@ -114,17 +115,9 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy documentation to GitHub Pages
         if: github.ref == 'refs/heads/master'
-        run: |
-          mkdir public
-          cp -r */**/doc/* public/ || true
-          git worktree add gh-pages
-          cp -r public/* gh-pages/
-          cd gh-pages
-          git add .
-          git commit -m "Deploy docs to GitHub Pages"
-          git push origin `git subtree split --prefix gh-pages master`:gh-pages --force
+        uses: actions/deploy-pages@v2
 
       - name: Publish to crates.io
         if: startsWith(github.ref, 'refs/tags/v')
@@ -167,12 +160,13 @@ jobs:
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
 
-      - name: Configure Git for GPG
+      - name: Configure Git & trust GPG key
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
           git config --global commit.gpgsign true
+          echo -e "5\ny\n" | gpg --command-fd 0 --edit-key "${{ secrets.GPG_KEY_ID }}" trust
 
       - name: Re-sign and push tag
         run: |
