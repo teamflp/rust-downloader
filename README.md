@@ -1,10 +1,5 @@
 # Rust Media Downloader
 
-![Latest Release](https://img.shields.io/github/v/release/teamflp/rust-downloader?style=for-the-badge)
-![Build](https://github.com/teamflp/rust-downloader/actions/workflows/build.yml/badge.svg)
-[![Codecov](https://codecov.io/gh/teamflp/rust-downloader/branch/master/graph/badge.svg)](https://codecov.io/gh/teamflp/rust-downloader)
-[![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://teamflp.github.io/rust-downloader/)
-
 **Rust Media Downloader** est un outil en ligne de commande, rapide et multiplateforme, pour télécharger facilement **vidéos, playlists** et **audios** depuis diverses plateformes.
 
 > ✅ Léger – ⚡ Rapide – 🔒 Sûr – 📦 Binaire prêt à l'emploi
@@ -44,7 +39,7 @@ Suivez les instructions…
 La documentation complète est disponible ici :
 👉 [teamflp.github.io/rust-downloader](https://teamflp.github.io/rust-downloader)
 
-## 🤝 Contribution
+## 🤝 Contribution!
 
 Les contributions sont bienvenues ! Forkez, codez, proposez.
 
