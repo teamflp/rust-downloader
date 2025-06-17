@@ -20,10 +20,9 @@ jobs:
 
       # 🦀 Installer Rust
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
+          targets: x86_64-unknown-linux-gnu
 
       - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
