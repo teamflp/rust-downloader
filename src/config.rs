@@ -6,6 +6,9 @@ use std::path::PathBuf;
 pub struct Config {
     pub default_audio_format: String,
     pub audio_formats: Vec<String>,
+    pub default_video_format: String,
+    pub download_directory: String,
+    pub keep_temporary_files: bool,
 }
 
 impl Default for Config {
@@ -13,6 +16,9 @@ impl Default for Config {
         Config {
             default_audio_format: "mp3".to_string(),
             audio_formats: vec!["mp3".to_string(), "m4a".to_string(), "flac".to_string(), "wav".to_string()],
+            default_video_format: "mp4".to_string(),
+            download_directory: dirs::download_dir().unwrap_or_else(|| PathBuf::from(".")).to_str().unwrap().to_string(),
+            keep_temporary_files: false,
         }
     }
 }

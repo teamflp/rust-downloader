@@ -17,8 +17,6 @@ mod config_test;
 mod cookies;
 mod config;
 mod settings;
-=======
-mod cookies;
 
 fn main() {
     // 🛠️ Vérification de la présence de yt-dlp et ffmpeg

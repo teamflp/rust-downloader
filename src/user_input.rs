@@ -1,4 +1,6 @@
 use std::io;
+use dialoguer::{Confirm, Select, theme::ColorfulTheme};
+use crate::config;
 
 /// Fonction pour demander à l'utilisateur s'il souhaite personnaliser le nom du fichier à télécharger.
 pub fn demander_nom_fichier_personnalise() -> Option<String> {
@@ -23,23 +25,29 @@ pub fn demander_nom_fichier_personnalise() -> Option<String> {
     }
 }
 
+use dialoguer::{Confirm, Select, theme::ColorfulTheme};
+
 /// Fonction pour demander à l'utilisateur le format vidéo et s'il souhaite conserver les fichiers originaux après la fusion.
 pub fn choisir_format_et_options() -> (String, bool) {
-    println!("Entrez le format de sortie (ex. 'mp4', 'webm', laissez vide pour le format par défaut) :");
-    let mut format = String::new();
-    io::stdin().read_line(&mut format).expect("Erreur de lecture du format de sortie");
-    let format = format.trim().to_string();
+    let config = config::load_config();
+    let default_format = config.default_video_format;
+    let keep_files = config.keep_temporary_files;
 
-    println!("Voulez-vous conserver les fichiers originaux après la fusion ? (o/n) :");
-    let mut keep_files_input = String::new();
-    io::stdin().read_line(&mut keep_files_input).expect("Erreur de lecture du choix de l'utilisateur");
-    let keep_files = keep_files_input.trim().eq_ignore_ascii_case("o");
+    let format: String = dialoguer::Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Enter the output format (leave empty for default)")
+        .default(default_format)
+        .interact_text()
+        .unwrap_or_else(|_| "mp4".to_string());
+
+    let keep_files = Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Keep original files after merge?")
+        .default(keep_files)
+        .interact_opt()
+        .unwrap_or(Some(false))
+        .unwrap_or(false);
 
     (format, keep_files)
 }
-
-use crate::config;
-use dialoguer::{Select, theme::ColorfulTheme};
 
 /// Fonction pour demander à l'utilisateur le format audio.
 pub fn choisir_audio_format() -> String {
