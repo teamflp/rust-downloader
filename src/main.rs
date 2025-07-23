@@ -23,6 +23,11 @@ fn main() {
     // 🛠️ Vérification de la présence de yt-dlp et ffmpeg
     ensure_dependencies();
 
+    let spleeter_available = check_command("spleeter");
+    if !spleeter_available {
+        warn!("{}", "Spleeter not found. Instrumental extraction will be disabled.".yellow());
+    }
+
     // 💡 Vérification de la présence de "curl" (à adapter si besoin)
     if check_command("curl") {
         info!("{}", "La commande 'curl' est disponible !".green());
@@ -32,7 +37,7 @@ fn main() {
     }
 
     loop {
-        afficher_interface();
+        afficher_interface(spleeter_available);
 
         print!("{}", "👉 Votre choix : ".bold());
         io::stdout().flush().unwrap_or_else(|e| {
@@ -79,7 +84,7 @@ fn main() {
                 let url = demander_url();
                 let audio_format = user_input::choisir_audio_format();
                 // On demande ici si l'utilisateur veut l'instrumental
-                let _extract_instrumental = user_input::demander_extraction_instrumental();
+                let _extract_instrumental = user_input::demander_extraction_instrumental(spleeter_available);
                 // Demander si l'utilisateur souhaite personnaliser le nom du fichier
                 let custom_filename = user_input::demander_nom_fichier_personnalise();
 
@@ -113,14 +118,18 @@ fn main() {
     }
 }
 
-fn afficher_interface() {
+fn afficher_interface(spleeter_available: bool) {
     info!("\n╔══════════════════════════════════════════════════╗");
-    info!("║     🎶 Panther Downloader - Audio & Vidéo 🎶       ║");
+    info!("║     🎶 Rust Media Downloader - Audio & Vidéo 🎶   ║");
     info!("╚══════════════════════════════════════════════════╝\n");
     info!("{}", "--- Downloads ---".bold());
     info!("   [1] 🎥 Download Video (Quick)");
     info!("   [2] 🎬 Download Video (Advanced)");
-    info!("   [3] 🎧 Download Audio");
+    if spleeter_available {
+        info!("   [3] 🎧 Download Audio (with instrumental extraction)");
+    } else {
+        info!("   [3] 🎧 Download Audio {}", "(instrumental extraction disabled)".dimmed());
+    }
     info!("   [4] 🍪 Download with Cookies");
     info!("{}", "--- Management ---".bold());
     info!("   [5] ⚙️  Settings");
