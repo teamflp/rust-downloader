@@ -95,12 +95,16 @@ pub fn choisir_audio_format() -> String {
 
 /// Fonction pour demander à l'utilisateur s'il souhaite extraire uniquement la piste instrumentale.
 /// Nécessite que Spleeter soit installé et accessible.
-pub fn demander_extraction_instrumental() -> bool {
-    info!("Voulez-vous extraire uniquement la piste instrumentale (sans les paroles) ? (o/n)");
-    info!("Note : Ceci nécessite que Spleeter soit installé sur votre système.");
-    let mut reponse = String::new();
-    io::stdin().read_line(&mut reponse).expect("Erreur de lecture de la réponse de l'utilisateur");
-    reponse.trim().eq_ignore_ascii_case("o")
+pub fn demander_extraction_instrumental(spleeter_available: bool) -> bool {
+    if !spleeter_available {
+        return false;
+    }
+    Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Voulez-vous extraire uniquement la piste instrumentale (sans les paroles) ?")
+        .default(false)
+        .interact_opt()
+        .unwrap_or(Some(false))
+        .unwrap_or(false)
 }
 
 /// Fonction pour demander à l'utilisateur s'il souhaite continuer ou quitter le programme.
