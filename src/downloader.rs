@@ -9,6 +9,92 @@ use std::fs; // Added for file.md operations
 use std::path::{Path, PathBuf}; // Added for path manipulation
 
 pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename: Option<String>) {
+    // First, check if the requested format is available
+    if !format.is_empty() && format != "best" {
+        info!("Vérification de la disponibilité du format {}...", format);
+        let available_format = check_format_availability(url, format);
+        
+        if let Some(best_format) = available_format {
+            if best_format != format {
+                warn!("Le format demandé '{}' n'est pas disponible. Utilisation de '{}' à la place.", format, best_format);
+                return download_video_with_format(url, &best_format, keep_files, custom_filename);
+            }
+        } else {
+            warn!("Le format demandé '{}' n'est pas disponible. Utilisation du meilleur format disponible.", format);
+            return download_video_with_format(url, "best", keep_files, custom_filename);
+        }
+    }
+    
+    // If we get here, either the format is empty, "best", or it's available
+    download_video_with_format(url, format, keep_files, custom_filename)
+}
+
+/// Vérifie si un format spécifique est disponible pour une URL donnée
+fn check_format_availability(url: &str, requested_format: &str) -> Option<String> {
+    let mut command = Command::new("yt-dlp");
+    command.args(&["--list-formats", url]);
+    command.stdout(Stdio::piped());
+    command.stderr(Stdio::piped());
+    
+    let output = match command.output() {
+        Ok(output) => output,
+        Err(e) => {
+            error!("Erreur lors de la vérification des formats disponibles: {}", e);
+            return None;
+        }
+    };
+    
+    if !output.status.success() {
+        error!("Erreur lors de la vérification des formats disponibles. Code: {:?}", output.status.code());
+        return None;
+    }
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    
+    // Parse the output to find available formats
+    let mut available_formats = Vec::new();
+    let mut best_video_format = None;
+    
+    for line in stdout.lines() {
+        // Skip header lines and empty lines
+        if line.trim().is_empty() || !line.contains("|") {
+            continue;
+        }
+        
+        // Extract format code
+        if let Some(format_code) = line.split_whitespace().next() {
+            if format_code == requested_format {
+                // Exact match found
+                return Some(requested_format.to_string());
+            }
+            
+            // For resolution-based formats like 1080p, 720p, etc.
+            if requested_format == "1080p" && line.contains("1080p") {
+                available_formats.push(format_code.to_string());
+            } else if requested_format == "720p" && line.contains("720p") {
+                available_formats.push(format_code.to_string());
+            } else if requested_format == "480p" && line.contains("480p") {
+                available_formats.push(format_code.to_string());
+            }
+            
+            // Keep track of the best video format
+            if line.contains("video only") && best_video_format.is_none() {
+                best_video_format = Some(format_code.to_string());
+            }
+        }
+    }
+    
+    // If we found formats matching the requested resolution, return the first one
+    if !available_formats.is_empty() {
+        return Some(available_formats[0].clone());
+    }
+    
+    // If we didn't find an exact match or resolution match, return the best video format or None
+    best_video_format
+}
+
+/// Télécharge une vidéo avec un format spécifique
+fn download_video_with_format(url: &str, format: &str, keep_files: bool, custom_filename: Option<String>) {
     let mut command = Command::new("yt-dlp");
 
     let config = config::load_config();
@@ -102,7 +188,8 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
         }
     } else {
         error!("Erreur lors du téléchargement de la vidéo (yt-dlp a échoué). Code: {:?}", status.code());
-        std::process::exit(1);
+        // Don't exit immediately, give the user a chance to try again with a different format
+        warn!("Essayez avec un format différent ou utilisez 'best' pour le meilleur format disponible.");
     }
 }
 
