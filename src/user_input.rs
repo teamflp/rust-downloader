@@ -1,4 +1,6 @@
 use std::io;
+use dialoguer::{Confirm, Select, theme::ColorfulTheme};
+use crate::config;
 
 /// Fonction pour demander à l'utilisateur s'il souhaite personnaliser le nom du fichier à télécharger.
 pub fn demander_nom_fichier_personnalise() -> Option<String> {
