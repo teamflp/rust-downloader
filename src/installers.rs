@@ -267,7 +267,7 @@ pub fn install_yt_dlp() {
 
 /// Vérifie et installe tous les outils nécessaires
 pub fn ensure_dependencies() {
-    println!("{}", "🔍 Vérification des dépendances...".bold()
+    println!("{}", "🔍 Vérification des dépendances...".bold());
 
     if !is_command_available("ffmpeg") {
         install_ffmpeg(); // This function calls exit(1) on failure
