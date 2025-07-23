@@ -11,11 +11,14 @@ mod user_input;
 mod commands_test;
 #[cfg(test)]
 mod cookies_test;
+
 #[cfg(test)]
 mod config_test;
 mod cookies;
 mod config;
 mod settings;
+=======
+mod cookies;
 
 fn main() {
     // 🛠️ Vérification de la présence de yt-dlp et ffmpeg
@@ -85,6 +88,7 @@ fn main() {
             }
             _ => {
                 println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2, 3, 4 ou q.".red());
+
                 continue;
             }
         }
