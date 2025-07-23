@@ -1,6 +1,7 @@
 use crate::config;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::io::{BufRead, BufReader as StdBufReader};
+use log::{info, warn, error};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -57,14 +58,14 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
         for line in stderr_reader.lines() {
             if let Ok(line) = line {
                 // Consider printing stderr to stderr stream
-                eprintln!("yt-dlp (stderr): {}", line);
+                error!("yt-dlp (stderr): {}", line);
             }
         }
     });
 
     for line in stdout_reader.lines() {
         if let Ok(line) = line {
-            println!("{}", line); // Print yt-dlp stdout
+            info!("{}", line); // Print yt-dlp stdout
 
             if line.contains("[download] Destination: ") {
                 let mut path_guard = downloaded_filename_clone.lock().unwrap();
@@ -90,17 +91,17 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
     pb_arc.lock().unwrap().finish_with_message("Téléchargement vidéo terminé.");
 
     if status.success() {
-        println!("La vidéo a été téléchargée avec succès !");
+        info!("La vidéo a été téléchargée avec succès !");
         if let Some(path_str) = downloaded_filename_arc.lock().unwrap().as_ref() {
             let config = config::load_config();
             let base_download_dir = PathBuf::from(config.download_directory);
             let full_path = base_download_dir.join(path_str);
-            println!("Chemin du fichier vidéo téléchargé : {:?}", full_path);
+            info!("Chemin du fichier vidéo téléchargé : {:?}", full_path);
         } else {
-            println!("Chemin du fichier vidéo non extrait de la sortie yt-dlp.");
+            warn!("Chemin du fichier vidéo non extrait de la sortie yt-dlp.");
         }
     } else {
-        eprintln!("Erreur lors du téléchargement de la vidéo (yt-dlp a échoué). Code: {:?}", status.code());
+        error!("Erreur lors du téléchargement de la vidéo (yt-dlp a échoué). Code: {:?}", status.code());
         std::process::exit(1);
     }
 }
@@ -129,7 +130,7 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
 
-    println!("Lancement de yt-dlp pour l'audio...");
+    info!("Lancement de yt-dlp pour l'audio...");
     let mut child = command
         .spawn()
         .expect("Erreur lors de l'exécution de yt-dlp pour l'audio");
@@ -155,7 +156,7 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
     thread::spawn(move || {
         for line in stderr_reader.lines() {
             if let Ok(line) = line {
-                eprintln!("yt-dlp (stderr): {}", line);
+                error!("yt-dlp (stderr): {}", line);
             }
         }
     });
@@ -163,7 +164,7 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
     // Processing yt-dlp's stdout
     for line in stdout_reader.lines() {
         if let Ok(line) = line {
-            println!("{}", line); // Print yt-dlp stdout
+            info!("{}", line); // Print yt-dlp stdout
 
             if line.contains("[download] Destination: ") {
                 let mut path_guard = downloaded_filename_clone.lock().unwrap();
@@ -192,7 +193,7 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
     pb_arc.lock().unwrap().finish_with_message("Téléchargement audio (yt-dlp) terminé.");
 
     if status.success() {
-        println!("L'audio a été téléchargée avec succès par yt-dlp!");
+        info!("L'audio a été téléchargée avec succès par yt-dlp!");
 
         let downloaded_filename_option = downloaded_filename_arc.lock().unwrap().clone();
 
@@ -209,28 +210,35 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
             };
 
 
-            println!("Chemin du fichier audio original : {:?}", original_downloaded_full_path);
+            info!("Chemin du fichier audio original : {:?}", original_downloaded_full_path);
 
             if extract_instrumental {
-                println!("⚙️  Extraction de l'instrumental avec Spleeter en cours (cela peut prendre du temps)...");
+                info!("⚙️  Extraction de l'instrumental avec Spleeter en cours (cela peut prendre du temps)...");
 
                 if Command::new("spleeter").arg("--version").output().is_err() {
-                    eprintln!("❌ Spleeter n'est pas installé ou n'est pas dans le PATH.");
-                    eprintln!("   Veuillez l'installer pour utiliser l'extraction instrumentale.");
-                    eprintln!("   Le fichier audio original a été conservé ici : {:?}", original_downloaded_full_path);
+                    error!("❌ Spleeter n'est pas installé ou n'est pas dans le PATH.");
+                    info!("   Veuillez l'installer pour utiliser l'extraction instrumentale.");
+                    info!("   Le fichier audio original a été conservé ici : {:?}", original_downloaded_full_path);
                     // Not exiting, user gets the original audio.
                     return;
                 }
 
                 let input_audio_path_for_spleeter = original_downloaded_full_path.to_str().unwrap_or_else(|| {
-                    eprintln!("❌ Chemin du fichier audio original invalide pour Spleeter.");
+                    error!("❌ Chemin du fichier audio original invalide pour Spleeter.");
                     // Exiting here as Spleeter cannot proceed.
                     std::process::exit(1); // Or return a Result from the function
                 });
 
                 let spleeter_output_parent_dir = original_downloaded_full_path.parent().unwrap_or_else(|| Path::new("."));
 
-                println!("Spleeter utilisera le dossier de sortie : {:?}", spleeter_output_parent_dir);
+                info!("Spleeter utilisera le dossier de sortie : {:?}", spleeter_output_parent_dir);
+
+                let spinner_style = ProgressStyle::default_spinner()
+                    .template("{spinner:.green} {msg}")
+                    .unwrap();
+                let pb = ProgressBar::new_spinner();
+                pb.set_style(spinner_style);
+                pb.set_message("Spleeter is working...");
 
                 let spleeter_cmd = Command::new("spleeter")
                     .arg("separate")
@@ -245,25 +253,26 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
 
                 match spleeter_cmd {
                     Ok(mut spleeter_child) => {
-                        println!("Spleeter démarré...");
+                        info!("Spleeter démarré...");
                         // Capture Spleeter's output (optional, can be verbose)
                         if let Some(s_stdout) = spleeter_child.stdout.take() {
                             let reader = StdBufReader::new(s_stdout);
                             for line in reader.lines().filter_map(Result::ok) {
-                                println!("Spleeter (stdout): {}", line);
+                                info!("Spleeter (stdout): {}", line);
                             }
                         }
                         if let Some(s_stderr) = spleeter_child.stderr.take() {
                             let reader = StdBufReader::new(s_stderr);
                             for line in reader.lines().filter_map(Result::ok) {
-                                eprintln!("Spleeter (stderr): {}", line);
+                                error!("Spleeter (stderr): {}", line);
                             }
                         }
 
                         let spleeter_status = spleeter_child.wait().expect("Spleeter a échoué lors de l'attente.");
+                        pb.finish_with_message("Spleeter finished.");
 
                         if spleeter_status.success() {
-                            println!("✅ Spleeter a terminé l'extraction.");
+                            info!("✅ Spleeter a terminé l'extraction.");
 
                             let original_file_stem = original_downloaded_full_path.file_stem()
                                 .and_then(|s| s.to_str())
@@ -283,49 +292,49 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
 
                                 match fs::rename(&spleeter_instrumental_path, &final_instrumental_full_path) {
                                     Ok(_) => {
-                                        println!("🎶 Fichier instrumental sauvegardé ici : {:?}", final_instrumental_full_path);
+                                        info!("🎶 Fichier instrumental sauvegardé ici : {:?}", final_instrumental_full_path);
                                         // Cleanup
                                         if let Err(e) = fs::remove_file(&original_downloaded_full_path) {
-                                            eprintln!("⚠️ Impossible de supprimer le fichier audio original complet {:?}: {}", original_downloaded_full_path, e);
+                                            warn!("⚠️ Impossible de supprimer le fichier audio original complet {:?}: {}", original_downloaded_full_path, e);
                                         }
                                         if spleeter_vocals_path.exists() {
                                             if let Err(e) = fs::remove_file(&spleeter_vocals_path) {
-                                                eprintln!("⚠️ Impossible de supprimer le fichier vocal {:?}: {}", spleeter_vocals_path, e);
+                                                warn!("⚠️ Impossible de supprimer le fichier vocal {:?}: {}", spleeter_vocals_path, e);
                                             }
                                         }
                                         if spleeter_output_subdir.exists() {
                                             if let Err(e) = fs::remove_dir_all(&spleeter_output_subdir) {
-                                                eprintln!("⚠️ Impossible de supprimer le dossier de Spleeter {:?}: {}", spleeter_output_subdir, e);
+                                                warn!("⚠️ Impossible de supprimer le dossier de Spleeter {:?}: {}", spleeter_output_subdir, e);
                                             }
                                         }
                                     }
                                     Err(e) => {
-                                        eprintln!("❌ Erreur lors du renommage/déplacement du fichier instrumental: {}", e);
-                                        eprintln!("   L'instrumental brut de Spleeter se trouve peut-être ici : {:?}", spleeter_instrumental_path);
-                                        eprintln!("   Le fichier audio original a été conservé ici : {:?}", original_downloaded_full_path);
+                                        error!("❌ Erreur lors du renommage/déplacement du fichier instrumental: {}", e);
+                                        info!("   L'instrumental brut de Spleeter se trouve peut-être ici : {:?}", spleeter_instrumental_path);
+                                        info!("   Le fichier audio original a été conservé ici : {:?}", original_downloaded_full_path);
                                     }
                                 }
                             } else {
-                                eprintln!("❌ Fichier instrumental ('{}') non trouvé dans le dossier de sortie de Spleeter: {:?}", instrumental_spleeter_filename, spleeter_output_subdir);
-                                eprintln!("   Le fichier audio original a été conservé ici : {:?}", original_downloaded_full_path);
+                                error!("❌ Fichier instrumental ('{}') non trouvé dans le dossier de sortie de Spleeter: {:?}", instrumental_spleeter_filename, spleeter_output_subdir);
+                                info!("   Le fichier audio original a été conservé ici : {:?}", original_downloaded_full_path);
                             }
                         } else {
-                            eprintln!("❌ Spleeter a échoué avec le code de sortie : {:?}. Le fichier audio original a été conservé.", spleeter_status.code());
-                            eprintln!("   Chemin du fichier original : {:?}", original_downloaded_full_path);
+                            error!("❌ Spleeter a échoué avec le code de sortie : {:?}. Le fichier audio original a été conservé.", spleeter_status.code());
+                            info!("   Chemin du fichier original : {:?}", original_downloaded_full_path);
                         }
                     }
                     Err(e) => {
-                        eprintln!("❌ Erreur lors du lancement de Spleeter: {}. Le fichier audio original a été conservé.", e);
-                        eprintln!("   Chemin du fichier original : {:?}", original_downloaded_full_path);
+                        error!("❌ Erreur lors du lancement de Spleeter: {}. Le fichier audio original a été conservé.", e);
+                        info!("   Chemin du fichier original : {:?}", original_downloaded_full_path);
                     }
                 }
             }
             // If not extracting instrumental, the original audio is already there and its path printed.
         } else {
-            eprintln!("⚠️ Impossible de déterminer le nom du fichier audio téléchargé par yt-dlp.");
+            warn!("⚠️ Impossible de déterminer le nom du fichier audio téléchargé par yt-dlp.");
         }
     } else {
-        eprintln!("Erreur lors du téléchargement de l'audio par yt-dlp. Code: {:?}", status.code());
+        error!("Erreur lors du téléchargement de l'audio par yt-dlp. Code: {:?}", status.code());
         std::process::exit(1);
     }
 }
