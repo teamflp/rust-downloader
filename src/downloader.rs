@@ -1,6 +1,5 @@
-use dirs::download_dir;
+use crate::config;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::env;
 use std::io::{BufRead, BufReader as StdBufReader};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
@@ -11,13 +10,8 @@ use std::path::{Path, PathBuf}; // Added for path manipulation
 pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename: Option<String>) {
     let mut command = Command::new("yt-dlp");
 
-    // Ajouter le répertoire de téléchargement par défaut
-    if let Some(download_path) = download_dir() {
-        command.args(&["-P", download_path.to_str().unwrap_or_else(|| {
-            eprintln!("Chemin de téléchargement invalide, utilisation du répertoire courant.");
-            "."
-        })]);
-    }
+    let config = config::load_config();
+    command.args(&["-P", &config.download_directory]);
 
     // Ajouter l'option pour personnaliser le nom du fichier si fourni
     if let Some(filename) = &custom_filename {
@@ -98,9 +92,8 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
     if status.success() {
         println!("La vidéo a été téléchargée avec succès !");
         if let Some(path_str) = downloaded_filename_arc.lock().unwrap().as_ref() {
-            let base_download_dir = download_dir().unwrap_or_else(|| {
-                env::current_dir().expect("Impossible d'obtenir le répertoire de travail actuel")
-            });
+            let config = config::load_config();
+            let base_download_dir = PathBuf::from(config.download_directory);
             let full_path = base_download_dir.join(path_str);
             println!("Chemin du fichier vidéo téléchargé : {:?}", full_path);
         } else {
@@ -115,15 +108,8 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
 // Modified download_audio function
 pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool, custom_filename: Option<String>) {
     let mut command = Command::new("yt-dlp");
-    let default_download_dir = download_dir(); // Get it once
-
-    // Ajouter le répertoire de téléchargement par défaut
-    let actual_download_path_str = if let Some(ref path_buf) = default_download_dir {
-        path_buf.to_str().unwrap_or(".")
-    } else {
-        "." // Download to current directory if default is not available or invalid
-    };
-    command.args(&["-P", actual_download_path_str]);
+    let config = config::load_config();
+    command.args(&["-P", &config.download_directory]);
 
     // Ajouter l'option pour personnaliser le nom du fichier si fourni
     if let Some(filename) = &custom_filename {
@@ -211,9 +197,8 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
         let downloaded_filename_option = downloaded_filename_arc.lock().unwrap().clone();
 
         if let Some(downloaded_filename_str) = downloaded_filename_option {
-            let base_download_dir = default_download_dir.unwrap_or_else(|| {
-                env::current_dir().expect("Impossible d'obtenir le répertoire de travail actuel")
-            });
+            let config = config::load_config();
+            let base_download_dir = PathBuf::from(config.download_directory);
             // yt-dlp might output a full path if -P is not CWD, or just a filename.
             // The extracted filename_str might already be a full path in some yt-dlp versions/configs.
             // Let's assume filename_str is the final filename *relative to base_download_dir* or an absolute path.
