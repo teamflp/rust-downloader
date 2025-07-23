@@ -127,6 +127,7 @@ fn show_audio_formats_menu() {
             _ => (),
         }
     }
+}
 
 fn view_default_format(config: &Config) {
     println!("{} {}", "Current default audio format:".cyan(), config.default_audio_format.yellow());

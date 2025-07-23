@@ -86,7 +86,6 @@ fn main() {
             }
             _ => {
                 println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2, 3, 4 ou q.".red());
-
                 continue;
             }
         }
