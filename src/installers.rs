@@ -268,22 +268,15 @@ pub fn install_yt_dlp() {
 /// Vérifie et installe tous les outils nécessaires
 pub fn ensure_dependencies() {
     println!("{}", "🔍 Vérification des dépendances...".bold());
-    let mut all_core_deps_ready = true;
 
     if !is_command_available("ffmpeg") {
-        install_ffmpeg(); // Cette fonction appelle exit(1) en cas d'échec
-        if !is_command_available("ffmpeg") { // Ne devrait pas être atteint si install_ffmpeg quitte
-            all_core_deps_ready = false;
-        }
+        install_ffmpeg(); // This function calls exit(1) on failure
     } else {
         println!("{}", "✅ ffmpeg est déjà installé.".green());
     }
 
     if !is_command_available("yt-dlp") {
-        install_yt_dlp(); // Cette fonction appelle exit(1) en cas d'échec
-        if !is_command_available("yt-dlp") { // Ne devrait pas être atteint
-            all_core_deps_ready = false;
-        }
+        install_yt_dlp(); // This function calls exit(1) on failure
     } else {
         println!("{}", "✅ yt-dlp est déjà installé.".green());
     }
