@@ -259,15 +259,14 @@ pub fn install_yt_dlp() {
         error!("{}", "❌ L'installation de yt-dlp a échoué. Veuillez l'installer manuellement.".red());
         exit(1);
     }
-    println!("{}", "✅ yt-dlp est maintenant prêt.".green());
-
+    info!("{}", "✅ yt-dlp est maintenant prêt.".green());
 }
 
 // This file no longer contains Spleeter installation logic.
 
 /// Vérifie et installe tous les outils nécessaires
 pub fn ensure_dependencies() {
-    println!("{}", "🔍 Vérification des dépendances...".bold());
+    info!("{}", "🔍 Vérification des dépendances...".bold());
 
     if !is_command_available("ffmpeg") {
         install_ffmpeg(); // This function calls exit(1) on failure
@@ -278,7 +277,7 @@ pub fn ensure_dependencies() {
     if !is_command_available("yt-dlp") {
         install_yt_dlp(); // This function calls exit(1) on failure
     } else {
-        println!("{}", "✅ yt-dlp est déjà installé.".green());
+        info!("{}", "✅ yt-dlp est déjà installé.".green());
     }
 
     // At this point, both ffmpeg and yt-dlp are available

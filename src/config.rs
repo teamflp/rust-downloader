@@ -64,4 +64,3 @@ pub fn save_config(config: &Config) {
     let content = toml::to_string(config).expect("Could not serialize config");
     fs::write(path, content).expect("Could not write to config file");
 }
-
