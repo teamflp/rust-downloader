@@ -45,8 +45,18 @@ pub fn load_config() -> Config {
         return config;
     }
 
-    let content = fs::read_to_string(path).expect("Could not read config file");
-    toml::from_str(&content).expect("Could not parse config file")
+    let content = fs::read_to_string(&path).expect("Could not read config file");
+    match toml::from_str(&content) {
+        Ok(config) => config,
+        Err(e) => {
+            log::warn!("Failed to parse config file, it might be outdated: {}. Creating a new one.", e);
+            // Attempt to remove the old, invalid config file
+            let _ = fs::remove_file(&path);
+            let config = Config::default();
+            save_config(&config);
+            config
+        }
+    }
 }
 
 pub fn save_config(config: &Config) {

@@ -131,6 +131,7 @@ fn afficher_interface(spleeter_available: bool) {
         println!("   [3] 🎧 Download Audio {}", "(instrumental extraction disabled)".dimmed());
     }
     println!("   [4] 🍪 Download with Cookies");
+    println!("");
     println!("{}", "--- Management ---".bold());
     println!("   [5] ⚙️  Settings");
     println!("   [q] ❌ Quit");
