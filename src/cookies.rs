@@ -3,6 +3,7 @@ use dialoguer::{Select, theme::ColorfulTheme};
 use std::process::{Command, Stdio};
 use which::which;
 use log::{info, warn, error};
+use console::Term;
 
 // Liste des navigateurs supportés et leurs noms pour yt-dlp
 const BROWSERS: &[(&str, &str)] = &[
@@ -50,20 +51,42 @@ pub fn extract_cookies_and_download(url: &str) {
 
     let browser_names: Vec<&str> = browsers.iter().map(|&(_, name)| name).collect();
 
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Choisissez un navigateur pour extraire les cookies")
-        .items(&browser_names)
-        .default(0)
-        .interact_opt()
-        .unwrap_or(None);
+    // Try to get a terminal instance for interactive mode
+    let term = Term::stdout();
+    
+    // Check if we can use interactive mode
+    if term.is_term() {
+        // Use interactive mode with explicit terminal
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Choisissez un navigateur pour extraire les cookies")
+            .items(&browser_names)
+            .default(0)
+            .interact_opt()
+            .unwrap_or(None);
 
-    if let Some(index) = selection {
-        let (browser_key, browser_name) = browsers[index];
-        info!("{} Utilisation des cookies de {}...", "🔑".yellow(), browser_name.cyan());
+        if let Some(index) = selection {
+            let (browser_key, browser_name) = browsers[index];
+            info!("{} Utilisation des cookies de {}...", "🔑".yellow(), browser_name.cyan());
 
-        download_with_cookies(url, browser_key);
+            download_with_cookies(url, browser_key);
+        } else {
+            warn!("{}", "Aucun navigateur sélectionné. Annulation.".yellow());
+        }
     } else {
-        warn!("{}", "Aucun navigateur sélectionné. Annulation.".yellow());
+        // Fallback to non-interactive mode
+        warn!("Terminal interactif non disponible. Utilisation du premier navigateur détecté.");
+        
+        // Print available browsers for reference
+        info!("Navigateurs disponibles:");
+        for (i, &(_, name)) in browsers.iter().enumerate() {
+            info!("  {}. {}", i + 1, name);
+        }
+        
+        // Use the first browser in the list
+        let (browser_key, browser_name) = browsers[0];
+        info!("{} Utilisation des cookies de {}...", "🔑".yellow(), browser_name.cyan());
+        
+        download_with_cookies(url, browser_key);
     }
 }
 
