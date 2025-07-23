@@ -11,6 +11,7 @@ mod user_input;
 mod commands_test;
 #[cfg(test)]
 mod cookies_test;
+
 #[cfg(test)]
 mod config_test;
 mod cookies;
