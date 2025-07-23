@@ -100,8 +100,10 @@ pub fn demander_extraction_instrumental(spleeter_available: bool) -> bool {
 
 /// Fonction pour demander à l'utilisateur s'il souhaite continuer ou quitter le programme.
 pub fn demander_si_continuer() -> bool {
-    info!("Souhaitez-vous continuer à télécharger d'autres fichiers ? (o/n) :");
-    let mut reponse = String::new();
-    io::stdin().read_line(&mut reponse).expect("Erreur de lecture de la réponse de l'utilisateur");
-    reponse.trim().eq_ignore_ascii_case("o")
+    // Utilisation de dialoguer pour une expérience utilisateur plus interactive et cohérente
+    Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Souhaitez-vous continuer à télécharger d'autres fichiers ?")
+        .default(true)
+        .interact()
+        .unwrap_or(false)
 }
