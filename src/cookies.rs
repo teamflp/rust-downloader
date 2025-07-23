@@ -2,6 +2,7 @@ use colored::*;
 use dialoguer::{Select, theme::ColorfulTheme};
 use std::process::{Command, Stdio};
 use which::which;
+use log::{info, warn, error};
 
 // Liste des navigateurs supportés et leurs noms pour yt-dlp
 const BROWSERS: &[(&str, &str)] = &[
@@ -36,14 +37,14 @@ pub fn get_installed_browsers() -> Vec<(&'static str, &'static str)> {
 /// Affiche un menu pour choisir un navigateur et exécute le téléchargement.
 pub fn extract_cookies_and_download(url: &str) {
     if which("yt-dlp").is_err() {
-        eprintln!("{}", "Erreur: 'yt-dlp' n'est pas installé ou pas dans le PATH.".red().bold());
+        error!("{}", "Erreur: 'yt-dlp' n'est pas installé ou pas dans le PATH.".red().bold());
         return;
     }
 
     let browsers = get_installed_browsers();
     if browsers.is_empty() {
-        eprintln!("{}", "Aucun navigateur compatible n'a été détecté.".red().bold());
-        println!("Navigateurs supportés : Chrome, Firefox, Brave, Edge, Opera, Vivaldi.");
+        error!("{}", "Aucun navigateur compatible n'a été détecté.".red().bold());
+        info!("Navigateurs supportés : Chrome, Firefox, Brave, Edge, Opera, Vivaldi.");
         return;
     }
 
@@ -58,17 +59,17 @@ pub fn extract_cookies_and_download(url: &str) {
 
     if let Some(index) = selection {
         let (browser_key, browser_name) = browsers[index];
-        println!("{} Utilisation des cookies de {}...", "🔑".yellow(), browser_name.cyan());
+        info!("{} Utilisation des cookies de {}...", "🔑".yellow(), browser_name.cyan());
 
         download_with_cookies(url, browser_key);
     } else {
-        println!("{}", "Aucun navigateur sélectionné. Annulation.".yellow());
+        warn!("{}", "Aucun navigateur sélectionné. Annulation.".yellow());
     }
 }
 
 /// Exécute yt-dlp avec les cookies du navigateur spécifié.
 fn download_with_cookies(url: &str, browser: &str) {
-    println!("{}", "\n📥 Téléchargement en cours...".cyan().bold());
+    info!("{}", "\n📥 Téléchargement en cours...".cyan().bold());
 
     let mut command = Command::new("yt-dlp");
     command
@@ -81,9 +82,9 @@ fn download_with_cookies(url: &str, browser: &str) {
     match command.status() {
         Ok(status) => {
             if status.success() {
-                println!("{}", "\n✅ Téléchargement terminé avec succès !".green().bold());
+                info!("{}", "\n✅ Téléchargement terminé avec succès !".green().bold());
             } else {
-                eprintln!(
+                error!(
                     "{}",
                     "\n❌ Erreur lors du téléchargement. yt-dlp a retourné un code d'erreur."
                         .red()
@@ -92,7 +93,7 @@ fn download_with_cookies(url: &str, browser: &str) {
             }
         }
         Err(e) => {
-            eprintln!(
+            error!(
                 "{}\nErreur : {}",
                 "❌ Échec de l'exécution de la commande yt-dlp.".red().bold(),
                 e

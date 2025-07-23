@@ -13,11 +13,17 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
+        let download_directory = dirs::download_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .to_str()
+            .unwrap_or(".")
+            .to_string();
+
         Config {
             default_audio_format: "mp3".to_string(),
             audio_formats: vec!["mp3".to_string(), "m4a".to_string(), "flac".to_string(), "wav".to_string()],
             default_video_format: "mp4".to_string(),
-            download_directory: dirs::download_dir().unwrap_or_else(|| PathBuf::from(".")).to_str().unwrap().to_string(),
+            download_directory,
             keep_temporary_files: false,
         }
     }
