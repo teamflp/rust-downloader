@@ -72,8 +72,8 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
                 *path_guard = Some(line["[download] Destination: ".len()..].trim().to_string());
             }
 
-            // Assuming afficher_progression_ligne is correct for video
-            if let Some((progress, total_size)) = crate::progress::afficher_progression_ligne(&line)
+            // Use parse_progress directly for consistency with download_audio
+            if let Some((progress, total_size)) = crate::progress::parse_progress(&line)
             {
                 let pb = pb_clone.lock().unwrap();
                 if total_size > 0 { // Avoid division by zero or setting length to 0 if not known
@@ -102,7 +102,8 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
         }
     } else {
         error!("Erreur lors du téléchargement de la vidéo (yt-dlp a échoué). Code: {:?}", status.code());
-        std::process::exit(1);
+        // Removed exit(1) to prevent application from stopping abruptly
+        warn!("Essayez avec un format différent ou utilisez 'best' pour le meilleur format disponible.");
     }
 }
 
@@ -337,8 +338,8 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
         }
     } else {
         error!("Erreur lors du téléchargement de l'audio par yt-dlp. Code: {:?}", status.code());
-
-        std::process::exit(1);
+        // Removed exit(1) to prevent application from stopping abruptly
+        warn!("Essayez avec un format audio différent ou vérifiez l'URL.");
     }
 }
 

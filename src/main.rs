@@ -109,7 +109,7 @@ fn main() {
         if !user_input::demander_si_continuer() {
             info!(
                 "{}",
-                "\n👋 Merci d’avoir utilisé Panther Downloader. À bientôt !\n"
+                "\n👋 Merci d’avoir utilisé Rust Media Downloader. À bientôt !\n"
                     .blue()
                     .bold()
             );

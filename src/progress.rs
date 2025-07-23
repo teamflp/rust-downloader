@@ -1,14 +1,15 @@
-/// Tente d'extraire la progression à partir d'une ligne de progression,
-/// affiche la progression formatée et retourne la valeur extraite.
+/// Tente d'extraire la progression à partir d'une ligne de progression
+/// et retourne la valeur extraite sans l'afficher directement.
+/*
 pub fn afficher_progression_ligne(line: &str) -> Option<(u64, u64)> {
     if let Some((current, total)) = parse_progress(line) {
-        println!("{}", formater_progression(current, total));
+        // Removed direct println to avoid duplicate progress display
         Some((current, total))
     } else {
         None
     }
 }
-
+*/
 
 /// Analyse une ligne contenant l'information de téléchargement pour en extraire
 /// la progression et la taille totale en octets. Retourne `None` si la ligne
