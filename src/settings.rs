@@ -204,3 +204,4 @@ fn remove_audio_format(config: &mut Config) {
         warn!("{}", "No selection made.".yellow());
     }
 }
+
