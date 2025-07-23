@@ -223,11 +223,13 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
                     return;
                 }
 
-                let input_audio_path_for_spleeter = original_downloaded_full_path.to_str().unwrap_or_else(|| {
-                    error!("❌ Chemin du fichier audio original invalide pour Spleeter.");
-                    // Exiting here as Spleeter cannot proceed.
-                    std::process::exit(1); // Or return a Result from the function
-                });
+                let input_audio_path_for_spleeter = match original_downloaded_full_path.to_str() {
+                    Some(path) => path,
+                    None => {
+                        error!("❌ Chemin du fichier audio original invalide pour Spleeter.");
+                        return;
+                    }
+                };
 
                 let spleeter_output_parent_dir = original_downloaded_full_path.parent().unwrap_or_else(|| Path::new("."));
 
@@ -335,6 +337,7 @@ pub fn download_audio(url: &str, audio_format: &str, extract_instrumental: bool,
         }
     } else {
         error!("Erreur lors du téléchargement de l'audio par yt-dlp. Code: {:?}", status.code());
+
         std::process::exit(1);
     }
 }
