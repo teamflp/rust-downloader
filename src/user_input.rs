@@ -38,12 +38,28 @@ pub fn choisir_format_et_options() -> (String, bool) {
     (format, keep_files)
 }
 
+use crate::config;
+use dialoguer::{Select, theme::ColorfulTheme};
+
 /// Fonction pour demander à l'utilisateur le format audio.
 pub fn choisir_audio_format() -> String {
-    println!("Entrez le format de sortie audio (ex. 'mp3', 'aac', 'flac', 'wav') :");
-    let mut audio_format = String::new();
-    io::stdin().read_line(&mut audio_format).expect("Erreur de lecture du format audio");
-    audio_format.trim().to_string()
+    let config = config::load_config();
+    let formats = &config.audio_formats;
+    let default_format = &config.default_audio_format;
+
+    let default_index = formats.iter().position(|f| f == default_format).unwrap_or(0);
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choisissez un format audio")
+        .items(formats)
+        .default(default_index)
+        .interact_opt()
+        .unwrap_or(None);
+
+    match selection {
+        Some(index) => formats[index].clone(),
+        None => default_format.clone(),
+    }
 }
 
 /// Fonction pour demander à l'utilisateur s'il souhaite extraire uniquement la piste instrumentale.

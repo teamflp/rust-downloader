@@ -11,6 +11,13 @@ mod user_input;
 mod commands_test;
 #[cfg(test)]
 mod cookies_test;
+
+#[cfg(test)]
+mod config_test;
+mod cookies;
+mod config;
+mod settings;
+=======
 mod cookies;
 
 fn main() {
@@ -76,8 +83,12 @@ fn main() {
                 let url = demander_url();
                 cookies::extract_cookies_and_download(&url);
             }
+            "4" => {
+                settings::show_settings_menu();
+            }
             _ => {
-                println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2, 3 ou q.".red());
+                println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2, 3, 4 ou q.".red());
+
                 continue;
             }
         }
@@ -104,6 +115,7 @@ fn afficher_interface() {
     println!("   [1] 🎥 Télécharger une vidéo");
     println!("   [2] 🎧 Télécharger de l'audio (avec option instrumental)");
     println!("   [3] 🍪 Télécharger avec les cookies du navigateur (pour les vidéos privées)");
+    println!("   [4] ⚙️  Settings");
     println!("   [q] ❌ Quitter");
 }
 
