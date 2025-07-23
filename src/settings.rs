@@ -2,7 +2,6 @@ use crate::config::{self, Config};
 use colored::*;
 use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 use log::{info, warn, error};
-use console::Term;
 
 pub fn show_settings_menu() {
     loop {
@@ -16,42 +15,22 @@ pub fn show_settings_menu() {
             "Back to main menu",
         ];
 
-        // Try to get a terminal instance for interactive mode
-        let term = Term::stdout();
-        
-        // Check if we can use interactive mode
-        if term.is_term() {
-            // Use interactive mode with explicit terminal
-            let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Settings Menu")
-                .items(&menu_items)
-                .default(0)
-                .interact_opt()
-                .unwrap_or(None);
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Settings Menu")
+            .items(&menu_items)
+            .default(0)
+            .interact_opt()
+            .unwrap_or(None);
 
-            match selection {
-                Some(0) => view_current_settings(&config),
-                Some(1) => set_default_video_format(&mut config),
-                Some(2) => set_download_directory(&mut config),
-                Some(3) => toggle_keep_temporary_files(&mut config),
-                Some(4) => show_audio_formats_menu(),
-                Some(5) => break,
-                None => break,
-                _ => (),
-            }
-        } else {
-            // Fallback to non-interactive mode
-            warn!("Terminal interactif non disponible. Affichage des paramètres actuels uniquement.");
-            
-            // Print available options for reference
-            info!("Options disponibles:");
-            for (i, item) in menu_items.iter().enumerate() {
-                info!("  {}. {}", i + 1, item);
-            }
-            
-            // Just show current settings and exit the settings menu
-            view_current_settings(&config);
-            break;
+        match selection {
+            Some(0) => view_current_settings(&config),
+            Some(1) => set_default_video_format(&mut config),
+            Some(2) => set_download_directory(&mut config),
+            Some(3) => toggle_keep_temporary_files(&mut config),
+            Some(4) => show_audio_formats_menu(),
+            Some(5) => break,
+            None => break,
+            _ => (),
         }
     }
 }
@@ -134,79 +113,39 @@ fn show_audio_formats_menu() {
             "Back to settings menu",
         ];
 
-        // Try to get a terminal instance for interactive mode
-        let term = Term::stdout();
-        
-        // Check if we can use interactive mode
-        if term.is_term() {
-            // Use interactive mode with explicit terminal
-            let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Audio Formats Menu")
-                .items(&menu_items)
-                .default(0)
-                .interact_opt()
-                .unwrap_or(None);
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Audio Formats Menu")
+            .items(&menu_items)
+            .default(0)
+            .interact_opt()
+            .unwrap_or(None);
 
-            match selection {
-                Some(0) => info!("{} {}", "Current default audio format:".cyan(), config.default_audio_format.yellow()),
-                Some(1) => set_default_format(&mut config),
-                Some(2) => add_audio_format(&mut config),
-                Some(3) => remove_audio_format(&mut config),
-                Some(4) => break,
-                None => break,
-                _ => (),
-            }
-        } else {
-            // Fallback to non-interactive mode
-            warn!("Terminal interactif non disponible. Affichage des formats audio uniquement.");
-            
-            // Print available options for reference
-            info!("Options disponibles:");
-            for (i, item) in menu_items.iter().enumerate() {
-                info!("  {}. {}", i + 1, item);
-            }
-            
-            // Just show current audio format and exit the menu
-            info!("{} {}", "Current default audio format:".cyan(), config.default_audio_format.yellow());
-            info!("{} {}", "Available audio formats:".cyan(), config.audio_formats.join(", ").yellow());
-            break;
+        match selection {
+            Some(0) => info!("{} {}", "Current default audio format:".cyan(), config.default_audio_format.yellow()),
+            Some(1) => set_default_format(&mut config),
+            Some(2) => add_audio_format(&mut config),
+            Some(3) => remove_audio_format(&mut config),
+            Some(4) => break,
+            None => break,
+            _ => (),
         }
     }
 }
 
 fn set_default_format(config: &mut Config) {
-    // Try to get a terminal instance for interactive mode
-    let term = Term::stdout();
-    
-    // Check if we can use interactive mode
-    if term.is_term() {
-        // Use interactive mode with explicit terminal
-        let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select a new default audio format")
-            .items(&config.audio_formats)
-            .default(0)
-            .interact_opt()
-            .unwrap_or(None);
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select a new default audio format")
+        .items(&config.audio_formats)
+        .default(0)
+        .interact_opt()
+        .unwrap_or(None);
 
-        if let Some(index) = selection {
-            config.default_audio_format = config.audio_formats[index].clone();
-            config::save_config(config);
-            info!("{} {}", "Default audio format set to:".green(), config.default_audio_format.yellow());
-        } else {
-            warn!("{}", "No selection made.".yellow());
-        }
+    if let Some(index) = selection {
+        config.default_audio_format = config.audio_formats[index].clone();
+        config::save_config(config);
+        info!("{} {}", "Default audio format set to:".green(), config.default_audio_format.yellow());
     } else {
-        // Fallback to non-interactive mode
-        warn!("Terminal interactif non disponible. Impossible de sélectionner un format audio.");
-        
-        // Print available formats for reference
-        info!("Formats audio disponibles:");
-        for (i, format) in config.audio_formats.iter().enumerate() {
-            info!("  {}. {}", i + 1, format);
-        }
-        
-        // No changes made
-        info!("{} {}", "Current default audio format:".cyan(), config.default_audio_format.yellow());
+        warn!("{}", "No selection made.".yellow());
     }
 }
 
