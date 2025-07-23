@@ -262,8 +262,8 @@ pub fn install_yt_dlp() {
         error!("{}", "❌ L'installation de yt-dlp a échoué. Veuillez l'installer manuellement.".red());
         exit(1);
     }
-
     println!("{}", "✅ yt-dlp est maintenant prêt.".green());
+
 }
 
 // This file no longer contains Spleeter installation logic.

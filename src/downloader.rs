@@ -26,7 +26,7 @@ pub fn download_video(url: &str, format: &str, keep_files: bool, custom_filename
         command.arg("-k");
     }
 
-    if !format.is_empty() {
+    if !format.is_empty() && format != "best" {
         command.args(&["-f", format]);
     }
 
