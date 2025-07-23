@@ -11,6 +11,7 @@ mod user_input;
 mod commands_test;
 #[cfg(test)]
 mod cookies_test;
+
 #[cfg(test)]
 mod config_test;
 mod cookies;
@@ -85,6 +86,7 @@ fn main() {
             }
             _ => {
                 println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2, 3, 4 ou q.".red());
+
                 continue;
             }
         }

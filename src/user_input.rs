@@ -1,4 +1,6 @@
 use std::io;
+use dialoguer::{Confirm, Select, theme::ColorfulTheme};
+use crate::config;
 
 /// Fonction pour demander à l'utilisateur s'il souhaite personnaliser le nom du fichier à télécharger.
 pub fn demander_nom_fichier_personnalise() -> Option<String> {
@@ -46,8 +48,6 @@ pub fn choisir_format_et_options() -> (String, bool) {
 
     (format, keep_files)
 }
-
-use crate::config;
 
 /// Fonction pour demander à l'utilisateur le format audio.
 pub fn choisir_audio_format() -> String {
