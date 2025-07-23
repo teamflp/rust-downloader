@@ -49,6 +49,8 @@ pub fn choisir_format_et_options() -> (String, bool) {
     (format, keep_files)
 }
 
+use crate::config;
+
 /// Fonction pour demander à l'utilisateur le format audio.
 pub fn choisir_audio_format() -> String {
     let config = config::load_config();
