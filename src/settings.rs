@@ -5,35 +5,42 @@ use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 pub fn show_settings_menu() {
     loop {
         let mut config = config::load_config();
-        let menu_items = [
-            "View Current Settings",
-            "Set default video format",
-            "Set download directory",
-            "Toggle keep temporary files",
-            "Manage audio formats",
-            "Back to main menu",
+         let menu_items = [
+            "Afficher les paramètres actuels",
+            "Définir le format vidéo par défaut",
+            "Définir le répertoire de téléchargement",
+            "Activer/Désactiver la conservation des fichiers temporaires",
+            "Gérer les formats audio", // Cette option mène à la logique de la branche `master`.
+            "Retour au menu principal",
         ];
 
         let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Settings Menu")
+            .with_prompt("Menu des Paramètres ⚙️")
             .items(&menu_items)
             .default(0)
             .interact_opt()
             .unwrap_or(None);
 
         match selection {
+            // Affiche tous les paramètres actuels.
             Some(0) => view_current_settings(&config),
+            // Définit le format vidéo par défaut.
             Some(1) => set_default_video_format(&mut config),
+            // Définit le dossier de téléchargement.
             Some(2) => set_download_directory(&mut config),
+            // Bascule l'option de conservation des fichiers.
             Some(3) => toggle_keep_temporary_files(&mut config),
+            // Ouvre le sous-menu pour la gestion des formats audio.
             Some(4) => show_audio_formats_menu(),
+            // L'index 5 correspond maintenant à "Retour au menu principal".
             Some(5) => break,
+            // L'utilisateur a appuyé sur Echap ou Q.
             None => break,
+            // Cas par défaut qui ne devrait pas arriver.
             _ => (),
         }
     }
 }
-
 
 fn view_current_settings(config: &Config) {
     println!("{}", "Current Settings:".bold().underline());
@@ -120,6 +127,10 @@ fn show_audio_formats_menu() {
             _ => (),
         }
     }
+
+fn view_default_format(config: &Config) {
+    println!("{} {}", "Current default audio format:".cyan(), config.default_audio_format.yellow());
+
 }
 
 fn set_default_format(config: &mut Config) {
