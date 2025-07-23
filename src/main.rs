@@ -119,21 +119,21 @@ fn main() {
 }
 
 fn afficher_interface(spleeter_available: bool) {
-    info!("\n╔══════════════════════════════════════════════════╗");
-    info!("║     🎶 Rust Media Downloader - Audio & Vidéo 🎶    ║");
-    info!("╚══════════════════════════════════════════════════╝\n");
-    info!("{}", "--- Downloads ---".bold());
-    info!("   [1] 🎥 Download Video (Quick)");
-    info!("   [2] 🎬 Download Video (Advanced)");
+    println!("\n╔══════════════════════════════════════════════════╗");
+    println!("║     🎶 Rust Media Downloader - Audio & Vidéo 🎶    ║");
+    println!("╚══════════════════════════════════════════════════╝\n");
+    println!("{}", "--- Downloads ---".bold());
+    println!("   [1] 🎥 Download Video (Quick)");
+    println!("   [2] 🎬 Download Video (Advanced)");
     if spleeter_available {
-        info!("   [3] 🎧 Download Audio (with instrumental extraction)");
+        println!("   [3] 🎧 Download Audio (with instrumental extraction)");
     } else {
-        info!("   [3] 🎧 Download Audio {}", "(instrumental extraction disabled)".dimmed());
+        println!("   [3] 🎧 Download Audio {}", "(instrumental extraction disabled)".dimmed());
     }
-    info!("   [4] 🍪 Download with Cookies");
-    info!("{}", "--- Management ---".bold());
-    info!("   [5] ⚙️  Settings");
-    info!("   [q] ❌ Quit");
+    println!("   [4] 🍪 Download with Cookies");
+    println!("{}", "--- Management ---".bold());
+    println!("   [5] ⚙️  Settings");
+    println!("   [q] ❌ Quit");
 }
 
 fn demander_url() -> String {
