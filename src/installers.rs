@@ -1,9 +1,7 @@
-use std::path::Path;
 use std::process::Stdio;
 use std::process::{Command, exit};
 use std::env;
 use colored::*;
-use std::io::{self, Write};
 
 /// Vérifie si une commande système est disponible dans le PATH
 fn is_command_available(cmd: &str) -> bool {
@@ -282,6 +280,9 @@ pub fn ensure_dependencies() {
     } else {
         println!("{}", "✅ yt-dlp est déjà installé.".green());
     }
+
+    // At this point, both ffmpeg and yt-dlp are available
+    let all_core_deps_ready = true;
 
     // Message final
     if all_core_deps_ready {
