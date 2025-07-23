@@ -1,6 +1,6 @@
-use std::io;
-use dialoguer::{Confirm, Select, theme::ColorfulTheme};
 use crate::config;
+use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
+use std::io;
 
 /// Fonction pour demander à l'utilisateur s'il souhaite personnaliser le nom du fichier à télécharger.
 pub fn demander_nom_fichier_personnalise() -> Option<String> {
@@ -25,15 +25,13 @@ pub fn demander_nom_fichier_personnalise() -> Option<String> {
     }
 }
 
-use dialoguer::{Confirm, Select, theme::ColorfulTheme};
-
 /// Fonction pour demander à l'utilisateur le format vidéo et s'il souhaite conserver les fichiers originaux après la fusion.
 pub fn choisir_format_et_options() -> (String, bool) {
     let config = config::load_config();
     let default_format = config.default_video_format;
     let keep_files = config.keep_temporary_files;
 
-    let format: String = dialoguer::Input::with_theme(&ColorfulTheme::default())
+    let format: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Enter the output format (leave empty for default)")
         .default(default_format)
         .interact_text()
@@ -48,8 +46,6 @@ pub fn choisir_format_et_options() -> (String, bool) {
 
     (format, keep_files)
 }
-
-use crate::config;
 
 /// Fonction pour demander à l'utilisateur le format audio.
 pub fn choisir_audio_format() -> String {
