@@ -9,6 +9,9 @@ mod installers;
 mod progress;
 mod user_input;
 mod commands_test;
+#[cfg(test)]
+mod cookies_test;
+mod cookies;
 
 fn main() {
     // 🛠️ Vérification de la présence de yt-dlp et ffmpeg
@@ -69,8 +72,12 @@ fn main() {
                 // Assurez-vous que votre fonction download_audio accepte ce nouveau paramètre
                 downloader::download_audio(&url, &audio_format, _extract_instrumental, custom_filename);
             }
+            "3" => {
+                let url = demander_url();
+                cookies::extract_cookies_and_download(&url);
+            }
             _ => {
-                println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2 ou q.".red());
+                println!("{}", "❌ Choix invalide. Veuillez entrer 1, 2, 3 ou q.".red());
                 continue;
             }
         }
@@ -96,6 +103,7 @@ fn afficher_interface() {
     println!("Choisissez une option :");
     println!("   [1] 🎥 Télécharger une vidéo");
     println!("   [2] 🎧 Télécharger de l'audio (avec option instrumental)");
+    println!("   [3] 🍪 Télécharger avec les cookies du navigateur (pour les vidéos privées)");
     println!("   [q] ❌ Quitter");
 }
 
