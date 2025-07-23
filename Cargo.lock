@@ -439,6 +439,7 @@ name = "rust-media-downloader"
 version = "0.1.0"
 dependencies = [
  "colored",
+ "console",
  "dialoguer",
  "dirs",
  "env_logger",
