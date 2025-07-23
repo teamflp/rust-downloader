@@ -120,7 +120,7 @@ fn main() {
 
 fn afficher_interface(spleeter_available: bool) {
     println!("\n╔══════════════════════════════════════════════════╗");
-    println!("║     🎶 Panther Downloader - Audio & Vidéo 🎶       ║");
+    println!("║     🎶 Rust Media Downloader - Audio & Vidéo 🎶    ║");
     println!("╚══════════════════════════════════════════════════╝\n");
     println!("{}", "--- Downloads ---".bold());
     println!("   [1] 🎥 Download Video (Quick)");
