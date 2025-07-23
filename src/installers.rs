@@ -262,14 +262,15 @@ pub fn install_yt_dlp() {
         error!("{}", "❌ L'installation de yt-dlp a échoué. Veuillez l'installer manuellement.".red());
         exit(1);
     }
-    info!("{}", "✅ yt-dlp est maintenant prêt.".green());
+    println!("{}", "✅ yt-dlp est maintenant prêt.".green());
+
 }
 
 // This file no longer contains Spleeter installation logic.
 
 /// Vérifie et installe tous les outils nécessaires
 pub fn ensure_dependencies() {
-    info!("{}", "🔍 Vérification des dépendances...".bold());
+    println!("{}", "🔍 Vérification des dépendances...".bold()
 
     if !is_command_available("ffmpeg") {
         install_ffmpeg(); // This function calls exit(1) on failure
@@ -280,6 +281,21 @@ pub fn ensure_dependencies() {
     if !is_command_available("yt-dlp") {
         install_yt_dlp(); // This function calls exit(1) on failure
     } else {
-        info!("{}", "✅ yt-dlp est déjà installé.".green());
+        println!("{}", "✅ yt-dlp est déjà installé.".green());
+    }
+
+    // Message final
+    if all_core_deps_ready {
+        println!("{}", "✅ Les dépendances de base (ffmpeg, yt-dlp) sont prêtes.".green());
+        if !is_command_available("spleeter") {
+            println!("{}", "⚠️ Spleeter n'est pas détecté. L'extraction instrumentale sera désactivée.".yellow());
+            println!("{}", "   Pour l'activer, veuillez l'installer manuellement.".yellow());
+        } else {
+            println!("{}", "✅ Spleeter est disponible.".green());
+        }
+    } else {
+        // Ce cas ne devrait pas être atteint si install_ffmpeg/yt-dlp quittent correctement en cas d'échec.
+        println!("{}", "❌ Certaines dépendances de base n'ont pas pu être installées. L'application ne peut pas continuer.".red());
+        exit(1);
     }
 }
