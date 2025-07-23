@@ -15,12 +15,9 @@ name = "rust-media-downloader"
 path = "src/main.rs"
 
 [dependencies]
-indicatif = "0.17"
-dirs = "6.0.0"
-regex = "1.11.1"
-colored = "3.0.0"
-which = "7.0.3"
+colored = "2.0"
+dialoguer = "0.11.0"
+log = "0.4"
+env_logger = "0.11"
+rmd-core = { path = "rmd-core" }
 
-[alias]
-tests = "cargo test -- --nocapture"
-fmt = "rustfmt"
