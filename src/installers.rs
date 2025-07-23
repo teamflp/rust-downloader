@@ -243,7 +243,6 @@ fn install_yt_dlp_linux_internal() -> bool {
     true
 }
 
-
 /// Installe yt-dlp de manière multiplateforme
 pub fn install_yt_dlp() {
     info!("⚙️ Installation de yt-dlp...");
