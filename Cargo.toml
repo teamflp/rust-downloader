@@ -20,4 +20,10 @@ dialoguer = "0.11.0"
 log = "0.4"
 env_logger = "0.11"
 rmd-core = { path = "rmd-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "1.6", features = ["shell-open"] }
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
 

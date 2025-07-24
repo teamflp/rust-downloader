@@ -1,3 +1,8 @@
+#![cfg_attr(
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
+)]
+
 use colored::*;
 use std::io::{self, Write};
 use log::{info, warn, error};
@@ -5,22 +10,16 @@ use rmd_core::{commands, installers, cookies, downloader, settings};
 
 mod user_input;
 
-fn main() {
-    env_logger::init();
-    // 🛠️ Vérification de la présence de yt-dlp et ffmpeg
-    installers::ensure_dependencies();
-
+fn run_cli() {
     let spleeter_available = commands::check_command("spleeter");
     if !spleeter_available {
         warn!("{}", "Spleeter not found. Instrumental extraction will be disabled.".yellow());
     }
 
-    // 💡 Vérification de la présence de "curl" (à adapter si besoin)
     if commands::check_command("curl") {
         info!("{}", "La commande 'curl' est disponible !".green());
     } else {
         warn!("{}", "La commande 'curl' n'est pas trouvée !".red());
-        // std::process::exit(1); // Décommentez si curl est indispensable
     }
 
     loop {
@@ -52,31 +51,23 @@ fn main() {
             "1" => {
                 let url = demander_url();
                 let (format, keep_files) = user_input::choisir_format_et_options();
-                // Demander si l'utilisateur souhaite personnaliser le nom du fichier
                 let custom_filename = user_input::demander_nom_fichier_personnalise();
                 info!("{}", "\n📥 Téléchargement de la vidéo en cours...\n".cyan().bold());
-                // Note: La fonction download_video n'est pas modifiée pour l'extraction instrumentale
                 downloader::download_video(&url, &format, keep_files, custom_filename);
             }
             "2" => {
                 let url = demander_url();
                 let (format, keep_files) = user_input::choisir_video_options_avances();
-                // Demander si l'utilisateur souhaite personnaliser le nom du fichier
                 let custom_filename = user_input::demander_nom_fichier_personnalise();
                 info!("{}", "\n📥 Téléchargement de la vidéo en cours...\n".cyan().bold());
-                // Note: La fonction download_video n'est pas modifiée pour l'extraction instrumentale
                 downloader::download_video(&url, &format, keep_files, custom_filename);
             }
             "3" => {
                 let url = demander_url();
                 let audio_format = user_input::choisir_audio_format();
-                // On demande ici si l'utilisateur veut l'instrumental
                 let _extract_instrumental = user_input::demander_extraction_instrumental(spleeter_available);
-                // Demander si l'utilisateur souhaite personnaliser le nom du fichier
                 let custom_filename = user_input::demander_nom_fichier_personnalise();
-
                 info!("{}", "\n📥 Téléchargement de l'audio en cours...\n".cyan().bold());
-                // Assurez-vous que votre fonction download_audio accepte ce nouveau paramètre
                 downloader::download_audio(&url, &audio_format, _extract_instrumental, custom_filename);
             }
             "4" => {
@@ -92,7 +83,6 @@ fn main() {
             }
         }
 
-        // Utilise la fonction centralisée pour demander si on continue
         if !user_input::demander_si_continuer() {
             info!(
                 "{}",
@@ -133,7 +123,7 @@ fn demander_url() -> String {
         let mut url = String::new();
         if io::stdin().read_line(&mut url).is_err() {
             error!("{}", "❌ Erreur de lecture de l'URL.".red());
-            continue; // Redemande l'URL en cas d'erreur de lecture
+            continue;
         }
         let url = url.trim();
         if url.is_empty() {
@@ -141,5 +131,16 @@ fn demander_url() -> String {
         } else {
             return url.to_string();
         }
+    }
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.contains(&"--cli".to_string()) {
+        run_cli();
+    } else {
+        tauri::Builder::default()
+            .run(tauri::generate_context!())
+            .expect("error while running tauri application");
     }
 }
