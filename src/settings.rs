@@ -37,12 +37,17 @@ pub fn show_settings_menu() {
 
 
 fn view_current_settings(config: &Config) {
-    info!("{}", "Current Settings:".bold().underline());
-    info!("- Default Video Format: {}", config.default_video_format.yellow());
-    info!("- Download Directory: {}", config.download_directory.yellow());
-    info!("- Keep Temporary Files: {}", if config.keep_temporary_files { "Yes".green() } else { "No".red() });
-    info!("- Default Audio Format: {}", config.default_audio_format.yellow());
-    info!("- Available Audio Formats: {}", config.audio_formats.join(", ").yellow());
+    println!("{}", "\n╔═══════════════════════════════════════════════════════════╗".bright_cyan().bold());
+    println!("{} {} {}", "║".bright_cyan().bold(), "⚙️  CURRENT SETTINGS".bright_yellow().bold(), "                                    ║".bright_cyan().bold());
+    println!("{}", "╚═══════════════════════════════════════════════════════════╝\n".bright_cyan().bold());
+    
+    println!("{}", "┌─────────────────────────────────────────────────────────┐".cyan());
+    println!("{} {} {}", "│".cyan(), format!("📹  Default Video Format: {}", config.default_video_format).bright_white(), format!("{:width$}│", "", width = 60 - format!("📹  Default Video Format: {}", config.default_video_format).len() - 3).cyan());
+    println!("{} {} {}", "│".cyan(), format!("📂  Download Directory: {}", config.download_directory).bright_white(), format!("{:width$}│", "", width = 60 - format!("📂  Download Directory: {}", config.download_directory).len() - 3).cyan());
+    println!("{} {} {}", "│".cyan(), format!("🗂️   Keep Temporary Files: {}", if config.keep_temporary_files { "Yes".green() } else { "No".red() }), format!("{:width$}│", "", width = 60 - format!("🗂️   Keep Temporary Files: {}", if config.keep_temporary_files { "Yes" } else { "No" }).len() - 3).cyan());
+    println!("{} {} {}", "│".cyan(), format!("🎵  Default Audio Format: {}", config.default_audio_format).bright_white(), format!("{:width$}│", "", width = 60 - format!("🎵  Default Audio Format: {}", config.default_audio_format).len() - 3).cyan());
+    println!("{} {} {}", "│".cyan(), format!("🎼  Available Audio Formats: {}", config.audio_formats.join(", ")).bright_white(), format!("{:width$}│", "", width = 60 - format!("🎼  Available Audio Formats: {}", config.audio_formats.join(", ")).len() - 3).cyan());
+    println!("{}", "└─────────────────────────────────────────────────────────┘\n".cyan());
 }
 
 fn set_default_video_format(config: &mut Config) {

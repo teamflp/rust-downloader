@@ -66,6 +66,7 @@ pub fn parse_progress(line: &str) -> Option<(u64, u64)> {
 /// println!("{}", message);
 /// // Possible sortie : [#####.....] 50% (50.0MB / 100.0MB)
 /// ```
+#[allow(dead_code)]
 pub fn formater_progression(current_bytes: u64, total_bytes: u64) -> String {
     const MB_DIVISOR: f64 = 1024.0 * 1024.0;
     const LONGUEUR_BARRE: usize = 10;

@@ -1,27 +1,35 @@
 use crate::config;
 use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
-use std::io;
+use std::io::{self, Write};
 use log::{info, warn};
+use colored::Colorize;
 
 /// Fonction pour demander à l'utilisateur s'il souhaite personnaliser le nom du fichier à télécharger.
 pub fn demander_nom_fichier_personnalise() -> Option<String> {
     let mut reponse = String::new();
-    info!("Souhaitez-vous personnaliser le nom du fichier à télécharger ? (o/n) :");
+    println!("{}", "\n┌─────────────────────────────────────────────────────────┐".bright_blue());
+    println!("{} {} {}", "│".bright_blue(), "📝  PERSONNALISATION DU FICHIER".bright_yellow().bold(), "                       │".bright_blue());
+    println!("{}", "└─────────────────────────────────────────────────────────┘".bright_blue());
+    print!("{} ", "\nSouhaitez-vous personnaliser le nom du fichier ? (o/n) :".bright_cyan());
+    io::stdout().flush().expect("Erreur de flush");
     io::stdin().read_line(&mut reponse).expect("Erreur de lecture de la réponse de l'utilisateur");
 
     if reponse.trim().eq_ignore_ascii_case("o") {
-        info!("Entrez le nom du fichier souhaité (sans l'extension) :");
+        print!("{} ", "\n✏️  Entrez le nom du fichier souhaité (sans extension) :".bright_green());
+        io::stdout().flush().expect("Erreur de flush");
         let mut nom_fichier = String::new();
         io::stdin().read_line(&mut nom_fichier).expect("Erreur de lecture du nom de fichier");
         let nom_fichier = nom_fichier.trim().to_string();
 
         if nom_fichier.is_empty() {
-            warn!("Aucun nom personnalisé fourni, le nom par défaut sera utilisé.");
+            warn!("{}", "\n⚠️  Aucun nom personnalisé fourni, le nom par défaut sera utilisé.\n".yellow());
             None
         } else {
+            info!("{}", format!("\n✅ Nom personnalisé : '{}'\n", nom_fichier).green());
             Some(nom_fichier)
         }
     } else {
+        info!("{}", "\n✅ Utilisation du nom par défaut.\n".green());
         None
     }
 }
@@ -96,6 +104,7 @@ pub fn demander_extraction_instrumental(spleeter_available: bool) -> bool {
         .default(false)
         .interact()
         .unwrap_or(false)
+    
 }
 
 /// Fonction pour demander à l'utilisateur s'il souhaite continuer ou quitter le programme.
@@ -106,4 +115,39 @@ pub fn demander_si_continuer() -> bool {
         .default(true)
         .interact()
         .unwrap_or(false)
+}
+
+/// Demande à l'utilisateur s'il souhaite utiliser des cookies et quel navigateur utiliser.
+pub fn demander_cookies() -> Option<String> {
+    println!("{}", "\n═══════════════════════════════════════════════════════════".bright_blue());
+    println!("{} {} {}", "│".bright_blue(), "🍪  AUTHENTIFICATION (COOKIES)".bright_yellow().bold(), "                       │".bright_blue());
+    println!("{}", "└───────────────────────────────────────────────────────────┘".bright_blue());
+
+    let confirmation = Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Voulez-vous utiliser les cookies d'un navigateur ? (Recommandé si erreur 'Sign in')")
+        .default(false)
+        .interact_opt()
+        .unwrap_or(None);
+
+    if let Some(true) = confirmation {
+        let browsers = crate::cookies::get_installed_browsers();
+        if browsers.is_empty() {
+            warn!("Aucun navigateur compatible détecté.");
+            return None;
+        }
+
+        let browser_names: Vec<&str> = browsers.iter().map(|&(_, name)| name).collect();
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Choisissez le navigateur")
+            .items(&browser_names)
+            .default(0)
+            .interact_opt()
+            .unwrap_or(None);
+
+        if let Some(index) = selection {
+            let (browser_key, _) = browsers[index];
+            return Some(browser_key.to_string());
+        }
+    }
+    None
 }

@@ -1,0 +1,5 @@
+#!/bin/bash
+# Wrapper script to run the project via cargo
+# Usage: ./rmd [OPTIONS] "[URL]"
+
+cargo run -- "$@"

@@ -1,6 +1,10 @@
 /target
 /.idea/
+/.vscode/
 /.env
+/.junie/
 /release.sh
 /.templates/
 /Daily/
+/guidelines.md
+
