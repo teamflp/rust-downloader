@@ -1,0 +1,49 @@
+# Backend Dockerfile
+FROM rust:1.75-slim as builder
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy workspace files
+COPY Cargo.toml ./
+COPY backend ./backend
+COPY shared ./shared
+
+# Build the backend
+RUN cargo build --release --package rust-media-downloader-backend
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    ffmpeg \
+    python3 \
+    python3-pip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install yt-dlp
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
+
+# Install spleeter (optional)
+RUN pip3 install --break-system-packages spleeter || true
+
+# Copy binary from builder
+COPY --from=builder /app/target/release/rust-media-downloader-backend /usr/local/bin/backend
+
+# Create downloads directory
+RUN mkdir -p /app/downloads
+
+EXPOSE 8080
+
+CMD ["backend"]

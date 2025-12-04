@@ -1,33 +1,10 @@
-[package]
-name = "rust-media-downloader"
-version = "0.1.0"
-edition = "2021"
-authors = ["Paterne G. G <paterne81@hotmail.fr>"]
-description = "Rust Downloader - Téléchargeur de médias multiplateforme"
-keywords = ["download", "cli", "media", "video", "tool"]
-categories = ["command-line-utilities", "network-programming"]
-license = "MIT"
-repository = "https://github.com/teamflp/rust-downloader"
-readme = "README.md"
+[workspace]
+members = ["cli", "backend", "shared"]
+resolver = "2"
 
-[[bin]]
-name = "rmd"
-path = "src/main.rs"
-
-
-[dependencies]
-indicatif = "0.17"
-dirs = "6.0.0"
-regex = "1.11.1"
-colored = "3.0.0"
-which = "7.0.3"
-dialoguer = "0.11.0"
-console = "0.15.7"
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-toml = "0.8"
 log = "0.4"
 env_logger = "0.11"
-anyhow = "1.0"
-clap = { version = "4.5", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
-

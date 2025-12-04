@@ -1,0 +1,21 @@
+[package]
+name = "rust-media-downloader-shared"
+version = "0.1.0"
+edition = "2021"
+authors = ["Paterne G. G <paterne81@hotmail.fr>"]
+description = "Shared library for Rust Media Downloader"
+license = "MIT"
+
+[dependencies]
+indicatif = "0.17"
+dirs = "6.0.0"
+regex = "1.11.1"
+which = "7.0.3"
+colored = "3.0.0"
+dialoguer = "0.11.0"
+console = "0.15.7"
+serde = { workspace = true }
+toml = "0.8"
+tokio = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
