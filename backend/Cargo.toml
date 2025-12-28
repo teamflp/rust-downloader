@@ -10,7 +10,7 @@ license = "MIT"
 axum = "0.7"
 tokio = { workspace = true, features = ["full"] }
 tower = "0.4"
-tower-http = { version = "0.5", features = ["fs", "trace", "cors"] }
+tower-http = { version = "0.5", features = ["fs", "trace", "cors", "compression-gzip", "compression-br"] }
 tower_governor = "0.4"
 serde = { workspace = true }
 serde_json = "1.0"
@@ -23,7 +23,24 @@ url = "2.5"
 regex = "1.11"
 once_cell = "1.20"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures = "0.3"
+reqwest = { version = "0.12", features = ["multipart", "stream", "json"] }
+log = { workspace = true }
+csv = "1.3"
+libc = "0.2"
 rust-media-downloader-shared = { path = "../shared" }
+utoipa = { version = "4.2", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
+sha2 = "0.10"
+rand = "0.8"
+base64 = { version = "0.21", features = ["alloc"] }
+hmac = "0.12"
+jsonwebtoken = "9.2"
+bcrypt = "0.15"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["fileapi", "winnt"] }
 
 [dev-dependencies]
 tokio-test = "0.4"

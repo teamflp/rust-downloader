@@ -1,0 +1,65 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+*.log.*
+logs/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+*.profraw
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+tmp/
+temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Rust-specific
+Cargo.lock
+
+# Downloaded files (should not be in repo)
+downloads/
+*.mp4
+*.mp3
+*.webm
+*.mkv
+*.wav
+*.m4a
+*.flac
+*.ogg
+*.opus
+
+# Configuration files with secrets
+config.toml
+*.key
+*.pem
+*.crt
+
