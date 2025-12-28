@@ -6,7 +6,7 @@ use log::{info, warn, error};
 
 // Use shared library
 use rust_media_downloader_shared::{
-    download_video, download_audio, extract_instrumental,
+    download_video, download_audio,
     check_command, ensure_dependencies,
     config, cookies,
 };
@@ -60,9 +60,9 @@ async fn main() -> Result<()> {
     // CLI Mode
     if let Some(url) = cli.url {
         if cli.audio {
-             download_audio(&url, &cli.format, cli.instrumental, None, None).await?;
+             download_audio(&url, &cli.format, cli.instrumental, None, None, false).await?;
         } else {
-             download_video(&url, &cli.format, false, None, None).await?;
+             download_video(&url, &cli.format, false, None, None, false).await?;
         }
         return Ok(());
     }
@@ -102,7 +102,7 @@ async fn main() -> Result<()> {
 
                 println!("{}", "\n═══════════════════════════════════════════════════════════".bright_blue());
                 info!("{}", "\nTéléchargement de la vidéo en cours...\n".cyan().bold());
-                if let Err(e) = download_video(&url, &format, keep_files, custom_filename, cookies).await {
+                if let Err(e) = download_video(&url, &format, keep_files, custom_filename, cookies, false).await {
                     error!("Erreur lors du téléchargement: {}", e);
                 }
             }
@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
 
                 println!("{}", "\n═══════════════════════════════════════════════════════════".bright_blue());
                 info!("{}", "\n📥 Téléchargement de la vidéo en cours...\n".cyan().bold());
-                if let Err(e) = download_video(&url, &format, keep_files, custom_filename, cookies).await {
+                if let Err(e) = download_video(&url, &format, keep_files, custom_filename, cookies, false).await {
                     error!("Erreur lors du téléchargement: {}", e);
                 }
             }
@@ -127,7 +127,7 @@ async fn main() -> Result<()> {
 
                 println!("{}", "\n═══════════════════════════════════════════════════════════".bright_blue());
                 info!("{}", "\n🎵 Téléchargement de l'audio en cours...\n".cyan().bold());
-                if let Err(e) = download_audio(&url, &audio_format, _extract_instrumental, custom_filename, cookies).await {
+                if let Err(e) = download_audio(&url, &audio_format, _extract_instrumental, custom_filename, cookies, false).await {
                     error!("Erreur lors du téléchargement: {}", e);
                 }
             }

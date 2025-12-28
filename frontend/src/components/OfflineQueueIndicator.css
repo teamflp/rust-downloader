@@ -1,0 +1,67 @@
+.offline-queue-indicator {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.offline-status,
+.queue-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offline-status {
+  color: var(--warning-color, #f59e0b);
+}
+
+.queue-status {
+  color: var(--accent-primary);
+}
+
+.queue-count {
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: var(--warning-color, #f59e0b);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .offline-queue-indicator {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+

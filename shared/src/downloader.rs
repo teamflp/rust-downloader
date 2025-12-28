@@ -348,7 +348,7 @@ mod tests {
         let cookies_browser = None;
         let command = build_yt_dlp_command_video(url, format, keep_files, download_path.clone(), custom_filename, cookies_browser);
 
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
         let expected_path_str = download_path.unwrap().to_str().unwrap().to_string();
 
         assert!(args.contains(&"-P".to_string()));
@@ -371,7 +371,7 @@ mod tests {
         let cookies_browser = None;
         let command = build_yt_dlp_command_video(url, format, keep_files, download_path, custom_filename, cookies_browser);
 
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
 
         // When download_path is None, -P should not be added by build_yt_dlp_command_video
         // However, the main download_video function *will* add -P with default_download_dir or "."
@@ -391,7 +391,7 @@ mod tests {
         let cookies_browser = None;
         let command = build_yt_dlp_command_audio(url, audio_format, download_path.clone(), custom_filename, cookies_browser);
 
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
         let expected_path_str = download_path.unwrap().to_str().unwrap().to_string();
 
         assert!(args.contains(&"-P".to_string()));
@@ -417,7 +417,7 @@ mod tests {
         let cookies_browser = None;
         let command = build_yt_dlp_command_video(url, format, keep_files, download_path.clone(), custom_filename.clone(), cookies_browser);
 
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
 
         assert!(args.contains(&"-o".to_string()));
         assert!(args.iter().any(|arg| arg == &format!("{}.%(ext)s", custom_filename.as_ref().unwrap())));
@@ -430,7 +430,7 @@ mod tests {
         let cookies_browser = None;
         let command = build_yt_dlp_command_audio(url, audio_format, download_path.clone(), custom_filename.clone(), cookies_browser);
 
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
 
         assert!(args.contains(&"-o".to_string()));
         assert!(args.iter().any(|arg| arg == &format!("{}.%(ext)s", custom_filename.as_ref().unwrap())));
@@ -447,14 +447,14 @@ mod tests {
         
         // Test video command
         let command = build_yt_dlp_command_video(url, format, keep_files, download_path.clone(), custom_filename.clone(), cookies_browser.clone());
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
         
         assert!(args.contains(&"--cookies-from-browser".to_string()));
         assert!(args.contains(&"chrome".to_string()));
 
         // Test audio command
         let command = build_yt_dlp_command_audio(url, "mp3", download_path, custom_filename, cookies_browser);
-        let args: Vec<String> = command.get_args().map(|a| a.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = command.as_std().get_args().map(|a| a.to_string_lossy().to_string()).collect();
         
         assert!(args.contains(&"--cookies-from-browser".to_string()));
         assert!(args.contains(&"chrome".to_string()));

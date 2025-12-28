@@ -9,7 +9,7 @@ use crate::{
     state::AppState,
     validation::validate_url,
 };
-use rust_media_downloader_shared::{download_video_enhanced, download_audio_enhanced};
+use rust_media_downloader_shared::{download_video, download_audio};
 use utoipa;
 
 #[utoipa::path(
@@ -279,60 +279,65 @@ pub async fn create_batch_downloads(
 }
 
 async fn perform_download(request: DownloadRequest, _id: String) -> anyhow::Result<String> {
+    use rust_media_downloader_shared::config;
+    use std::path::PathBuf;
+    
     let download_playlist = request.download_playlist.unwrap_or(false);
-    let download_subtitles = request.download_subtitles.unwrap_or(false);
-    let subtitle_language = request.subtitle_language.as_deref();
     
     match request.download_type {
         DownloadType::Video => {
             let format = request.format.as_deref().unwrap_or("mp4");
-            let resolution = request.resolution.as_deref();
-            let audio_quality = request.audio_quality.as_deref();
+            // Note: resolution and audio_quality are not supported by download_video
+            // download_subtitles and subtitle_language are also not supported
             
-            let file_path = download_video_enhanced(
+            download_video(
                 &request.url,
                 format,
-                resolution,
-                audio_quality,
-                download_subtitles,
-                subtitle_language,
-                false,
+                false, // keep_files
                 request.custom_filename,
                 request.cookies_browser,
                 download_playlist,
             ).await?;
-            Ok(file_path)
+            
+            // Construct file path from download directory
+            let config = config::load_config();
+            let download_dir = PathBuf::from(config.download_directory);
+            // Since we don't know the exact filename, return the directory
+            // The actual filename will be determined by yt-dlp
+            Ok(download_dir.to_string_lossy().to_string())
         }
         DownloadType::Audio => {
             let format = request.format.as_deref().unwrap_or("mp3");
-            let audio_quality = request.audio_quality.as_deref();
+            // Note: audio_quality is not supported by download_audio
             
-            let file_path = download_audio_enhanced(
+            download_audio(
                 &request.url,
                 format,
-                audio_quality,
-                false,
+                false, // extract_instrumental
                 request.custom_filename,
                 request.cookies_browser,
                 download_playlist,
             ).await?;
-            Ok(file_path)
+            
+            let config = config::load_config();
+            let download_dir = PathBuf::from(config.download_directory);
+            Ok(download_dir.to_string_lossy().to_string())
         }
         DownloadType::Instrumental => {
             let format = request.format.as_deref().unwrap_or("mp3");
-            let audio_quality = request.audio_quality.as_deref();
             
-            // First download audio and extract instrumental
-            let file_path = download_audio_enhanced(
+            download_audio(
                 &request.url,
                 format,
-                audio_quality,
                 true, // extract_instrumental = true
-                request.custom_filename.clone(),
+                request.custom_filename,
                 request.cookies_browser,
                 download_playlist,
             ).await?;
-            Ok(file_path)
+            
+            let config = config::load_config();
+            let download_dir = PathBuf::from(config.download_directory);
+            Ok(download_dir.to_string_lossy().to_string())
         }
     }
 }

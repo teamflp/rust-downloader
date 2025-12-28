@@ -1,0 +1,70 @@
+.download-card-hover-container {
+  position: relative;
+}
+
+.download-card-hover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--bg-secondary, #1a1a2e);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 250px;
+  backdrop-filter: blur(10px);
+}
+
+.hover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.hover-item svg {
+  flex-shrink: 0;
+  color: var(--accent-primary, #818cf8);
+  width: 14px;
+  height: 14px;
+}
+
+.hover-label {
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  min-width: 60px;
+}
+
+.hover-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  word-break: break-word;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.hover-path .hover-value {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .download-card-hover {
+    position: fixed;
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: calc(100vw - 40px);
+    margin-top: 0;
+  }
+}
+

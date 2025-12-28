@@ -29,7 +29,7 @@ impl Default for Config {
     }
 }
 
-fn get_config_path() -> PathBuf {
+pub fn get_config_path() -> PathBuf {
     let mut path = dirs::config_dir().expect("Could not find config directory");
     path.push("rust-media-downloader");
     fs::create_dir_all(&path).expect("Could not create config directory");
