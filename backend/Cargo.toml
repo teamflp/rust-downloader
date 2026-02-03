@@ -36,7 +36,7 @@ sha2 = "0.10"
 rand = "0.8"
 base64 = { version = "0.21", features = ["alloc"] }
 hmac = "0.12"
-jsonwebtoken = "9.2"
+jsonwebtoken = "10.3"
 bcrypt = "0.15"
 
 [target.'cfg(windows)'.dependencies]
